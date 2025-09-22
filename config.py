@@ -87,7 +87,7 @@ try:
     # Each device needs its own chip select pin
     spi_cs = board.CE1       # Thermocouple Chip Select (GPIO7)
     # SPI bus pins (SCLK, MOSI, MISO) are shared via board.SPI()
-    gpio_heat = board.D6     #output that controls relay
+    gpio_heat = board.D21     #output that controls relay
     gpio_heat_invert = False #invert the output state
 except (NotImplementedError,AttributeError):
     print("not running on blinka recognized board, probably a simulation")
