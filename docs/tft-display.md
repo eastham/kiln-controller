@@ -26,29 +26,31 @@ The Mini PiTFT shares the SPI bus with the thermocouple board. Both devices use 
 
 | TFT Pin | RPi Pin | BCM Pin | Function |
 |---------|---------|---------|----------|
-| CS      | CE0     | GPIO8   | TFT Chip Select (separate from thermocouple CS) |
-| DC      | GPIO25  | GPIO25  | Data/Command (TFT-specific signal) |
-| RST     | GPIO24  | GPIO24  | Reset (TFT-specific signal) |
+| CS      | CE0     | GPIO8   | TFT Chip Select (hardware SPI CE0) |
+| DC      | GPIO19  | GPIO19  | Data/Command (TFT-specific signal) |
+| RST     | GPIO26  | GPIO26  | Reset (TFT-specific signal) |
 | SPI SCLK| SCLK    | GPIO11  | SPI Clock (shared with thermocouple) |
 | SPI MOSI| MOSI    | GPIO10  | SPI Data Out (shared with thermocouple) |
 | SPI MISO| MISO    | GPIO9   | SPI Data In (shared with thermocouple) |
 | VCC     | 3.3V    | -       | Power |
 | GND     | GND     | -       | Ground |
 
-**Important:** The thermocouple board uses GPIO22 for its CS pin, while the TFT display uses GPIO8 (CE0). This allows both devices to coexist on the same SPI bus.
+**Important:** Both devices use hardware SPI with different chip selects:
+- **Thermocouple**: CE1 (GPIO7)
+- **TFT Display**: CE0 (GPIO8)
 
 ### SPI Bus Sharing
 
 The kiln controller now supports two SPI devices on the same bus:
 
 1. **Thermocouple Board** (MAX31855/MAX31856)
-   - CS: GPIO22 (configurable as `spi_cs` in config.py)
+   - CS: CE1/GPIO7 (configurable as `spi_cs` in config.py)
    - Standard SPI device for temperature reading
 
 2. **TFT Display** (ST7789 controller)
-   - CS: GPIO8 (configurable as `tft_cs_pin` in config.py)
-   - DC: GPIO25 (Data/Command control - display specific)
-   - RST: GPIO24 (Reset - display specific)
+   - CS: CE0/GPIO8 (configurable as `tft_cs_pin` in config.py)
+   - DC: GPIO19 (Data/Command control - display specific)
+   - RST: GPIO26 (Reset - display specific)
 
 Both devices share the SPI bus signals (SCLK, MOSI, MISO) but use different chip select pins. The DC and Reset pins are specific to the display controller and not part of the standard SPI interface.
 

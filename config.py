@@ -84,11 +84,10 @@ currency_type   = "$"   # Currency Symbol to show when calculating cost to run j
 
 try:
     import board
-    spi_sclk  = board.D17    #spi clock
-    spi_miso  = board.D27    #spi Microcomputer In Serial Out
-    spi_cs    = board.D22    #spi Chip Select
-    spi_mosi  = board.D10    #spi Microcomputer Out Serial In (not connected) 
-    gpio_heat = board.D23    #output that controls relay
+    # Each device needs its own chip select pin
+    spi_cs = board.CE1       # Thermocouple Chip Select (GPIO7)
+    # SPI bus pins (SCLK, MOSI, MISO) are shared via board.SPI()
+    gpio_heat = board.D6     #output that controls relay
     gpio_heat_invert = False #invert the output state
 except (NotImplementedError,AttributeError):
     print("not running on blinka recognized board, probably a simulation")
@@ -99,8 +98,8 @@ except (NotImplementedError,AttributeError):
 # There are only two breakoutboards supported. 
 #   max31855 - only supports type K thermocouples
 #   max31856 - supports many thermocouples
-max31855 = 1
-max31856 = 0
+max31855 = 0
+max31856 = 1
 # uncomment these two lines if using MAX-31856
 import adafruit_max31856
 thermocouple_type = adafruit_max31856.ThermocoupleType.K
@@ -286,14 +285,11 @@ throttle_percent = 20
 enable_tft_display = False
 
 # TFT Display GPIO pins (only used if enable_tft_display = True)
-# These pins are separate from the thermocouple SPI pins above
-# to allow both devices to share the same SPI bus
 try:
     import board
-    tft_cs_pin    = board.CE0    # TFT Chip Select (GPIO8) - different from thermocouple CS
-    tft_dc_pin    = board.D25    # TFT Data/Command
-    tft_reset_pin = board.D24    # TFT Reset
-    # TFT uses the same SPI bus (SCLK, MOSI, MISO) as thermocouple but different CS
+    tft_cs_pin    = board.CE0    # TFT Chip Select (GPIO8/CE0)
+    tft_dc_pin    = board.D19    # TFT Data/Command
+    tft_reset_pin = board.D26    # TFT Reset
 except (NotImplementedError,AttributeError):
     print("TFT display pins not configured - probably running in simulation mode")
 
@@ -302,13 +298,13 @@ except (NotImplementedError,AttributeError):
 # Enable physical buttons for kiln control:
 # - Program cycle button: cycles through available firing profiles (IDLE only)
 # - Start/stop button: starts selected program or stops running program
-enable_gpio_buttons = False
+enable_gpio_buttons = True
 
 # GPIO Button pins (only used if enable_gpio_buttons = True)
 # These require pull-up resistors and momentary push buttons
 try:
     import board
-    gpio_program_button = board.D26    # Program cycle button (configurable)
-    gpio_startstop_button = board.D19  # Start/stop button (configurable)
+    gpio_program_button = board.D24    # Program cycle button (configurable)
+    gpio_startstop_button = board.D23  # Start/stop button (configurable)
 except (NotImplementedError,AttributeError):
     print("GPIO button pins not configured - probably running in simulation mode")
