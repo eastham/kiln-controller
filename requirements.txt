@@ -23,3 +23,7 @@ adafruit-circuitpython-bitbangio
 
 # untested - for mcp9600 and mcp9601
 #adafruit-circuitpython-mcp9600
+
+# for TFT display support (Adafruit Mini PiTFT - 135x240 Color TFT)
+adafruit-circuitpython-rgb-display
+pillow

@@ -5,6 +5,8 @@ import os
 import sys
 import logging
 import json
+import signal
+import threading
 
 import bottle
 import gevent
@@ -27,6 +29,13 @@ profile_path = config.kiln_profiles_directory
 
 from oven import SimulatedOven, RealOven, Profile
 from ovenWatcher import OvenWatcher
+from tft_display import create_tft_display
+from gpio_buttons import create_button_manager
+from spi_utils import init_spi_lock
+
+# Initialize shared SPI lock to prevent simultaneous access between
+# thermocouple and TFT display
+init_spi_lock()
 
 app = bottle.Bottle()
 
@@ -36,9 +45,27 @@ if config.simulate == True:
 else:
     log.info("this is a real kiln")
     oven = RealOven()
+
+# SPI lock is now available globally via spi_utils
 ovenWatcher = OvenWatcher(oven)
 # this ovenwatcher is used in the oven class for restarts
 oven.set_ovenwatcher(ovenWatcher)
+
+# Initialize TFT display if enabled
+tft_display = create_tft_display(oven)
+if tft_display:
+    tft_display.start_display()
+    log.info("TFT display enabled and started")
+else:
+    tft_display = None
+
+# Initialize GPIO button manager if enabled
+button_manager = create_button_manager(oven, tft_display)
+if button_manager:
+    button_manager.start_button_manager()
+    log.info("GPIO button manager enabled and started")
+else:
+    button_manager = None
 
 @app.route('/')
 def index():
@@ -340,14 +367,43 @@ def get_config():
         "kwh_rate": config.kwh_rate,
         "currency_type": config.currency_type})    
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    log.info("Received shutdown signal, cleaning up...")
+    if 'tft_display' in globals() and tft_display:
+        tft_display.stop_display()
+    if 'button_manager' in globals() and button_manager:
+        button_manager.stop_button_manager()
+    sys.exit(0)
+
 def main():
+    global tft_display, button_manager
+
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     ip = "0.0.0.0"
     port = config.listening_port
     log.info("listening on %s:%d" % (ip, port))
 
-    server = WSGIServer((ip, port), app,
-                        handler_class=WebSocketHandler)
-    server.serve_forever()
+    try:
+        server = WSGIServer((ip, port), app,
+                            handler_class=WebSocketHandler)
+        server.serve_forever()
+    except KeyboardInterrupt:
+        log.info("Keyboard interrupt received, shutting down...")
+        if tft_display:
+            tft_display.stop_display()
+        if button_manager:
+            button_manager.stop_button_manager()
+    except Exception as e:
+        log.error(f"Server error: {e}")
+        if tft_display:
+            tft_display.stop_display()
+        if button_manager:
+            button_manager.stop_button_manager()
+        raise
 
 
 if __name__ == "__main__":

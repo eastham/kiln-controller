@@ -277,3 +277,38 @@ kiln_profiles_directory = os.path.abspath(os.path.join(os.path.dirname( __file__
 # To prevent throttling, set throttle_percent to 100.
 throttle_below_temp = 300
 throttle_percent = 20
+
+########################################################################
+# TFT Display Support
+# Enable support for Adafruit Mini PiTFT - 135x240 Color TFT display
+# This will show current temp, target temp, and time remaining
+# Set to True to enable, False to disable
+enable_tft_display = False
+
+# TFT Display GPIO pins (only used if enable_tft_display = True)
+# These pins are separate from the thermocouple SPI pins above
+# to allow both devices to share the same SPI bus
+try:
+    import board
+    tft_cs_pin    = board.CE0    # TFT Chip Select (GPIO8) - different from thermocouple CS
+    tft_dc_pin    = board.D25    # TFT Data/Command
+    tft_reset_pin = board.D24    # TFT Reset
+    # TFT uses the same SPI bus (SCLK, MOSI, MISO) as thermocouple but different CS
+except (NotImplementedError,AttributeError):
+    print("TFT display pins not configured - probably running in simulation mode")
+
+########################################################################
+# GPIO Button Control
+# Enable physical buttons for kiln control:
+# - Program cycle button: cycles through available firing profiles (IDLE only)
+# - Start/stop button: starts selected program or stops running program
+enable_gpio_buttons = False
+
+# GPIO Button pins (only used if enable_gpio_buttons = True)
+# These require pull-up resistors and momentary push buttons
+try:
+    import board
+    gpio_program_button = board.D26    # Program cycle button (configurable)
+    gpio_startstop_button = board.D19  # Start/stop button (configurable)
+except (NotImplementedError,AttributeError):
+    print("GPIO button pins not configured - probably running in simulation mode")

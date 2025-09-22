@@ -9,6 +9,7 @@ import digitalio
 import busio
 import adafruit_bitbangio as bitbangio
 import statistics
+from spi_utils import spi_lock
 
 log = logging.getLogger(__name__)
 
@@ -221,7 +222,8 @@ class Max31855(TempSensorReal):
 
     def raw_temp(self):
         try:
-            return self.thermocouple.temperature_NIST
+            with spi_lock():
+                return self.thermocouple.temperature_NIST
         except RuntimeError as rte:
             if rte.args and rte.args[0]:
                 raise Max31855_Error(rte.args[0])
@@ -313,15 +315,16 @@ class Max31856(TempSensorReal):
 
     def raw_temp(self):
         # The underlying adafruit library does not throw exceptions
-        # for thermocouple errors. Instead, they are stored in 
+        # for thermocouple errors. Instead, they are stored in
         # dict named self.thermocouple.fault. Here we check that
         # dict for errors and raise an exception.
         # and raise Max31856_Error(message)
-        temp = self.thermocouple.temperature
-        for k,v in self.thermocouple.fault.items():
-            if v:
-                raise Max31856_Error(k)
-        return temp
+        with spi_lock():
+            temp = self.thermocouple.temperature
+            for k,v in self.thermocouple.fault.items():
+                if v:
+                    raise Max31856_Error(k)
+            return temp
 
 class Oven(threading.Thread):
     '''parent oven class. this has all the common code
