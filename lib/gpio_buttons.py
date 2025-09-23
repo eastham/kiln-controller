@@ -16,6 +16,7 @@ import os
 import requests
 import digitalio
 import config
+from adafruit_debouncer import Debouncer
 
 log = logging.getLogger(__name__)
 
@@ -125,7 +126,6 @@ class ButtonManager(threading.Thread):
         self.api_url = f"http://localhost:{config.listening_port}/api"
 
         # Button timing constants
-        self.DEBOUNCE_TIME = 0.1  # Debounce delay in seconds
         self.SELECTION_TIMEOUT = 30  # Auto-exit program selection after N seconds
 
         # State management
@@ -135,10 +135,6 @@ class ButtonManager(threading.Thread):
         # Profile management
         profiles_dir = getattr(config, 'kiln_profiles_directory', 'storage/profiles')
         self.profile_manager = ProfileManager(profiles_dir)
-
-        # Button state tracking (for debouncing)
-        self.last_program_press = 0     # Last program button press time
-        self.last_startstop_press = 0   # Last start/stop button press time
 
         self.init_buttons()
 
@@ -163,19 +159,21 @@ class ButtonManager(threading.Thread):
                     self.tft_display.show_message(message, 5)  # Show for 5 seconds
 
     def init_buttons(self):
-        """Initialize GPIO buttons"""
+        """Initialize GPIO buttons with debouncing"""
         try:
             # Configure program cycle button
-            self.program_button = digitalio.DigitalInOut(config.gpio_program_button)
-            self.program_button.direction = digitalio.Direction.INPUT
-            self.program_button.pull = digitalio.Pull.UP
+            program_pin = digitalio.DigitalInOut(config.gpio_program_button)
+            program_pin.direction = digitalio.Direction.INPUT
+            program_pin.pull = digitalio.Pull.UP
+            self.program_button = Debouncer(program_pin)
 
             # Configure start/stop button
-            self.startstop_button = digitalio.DigitalInOut(config.gpio_startstop_button)
-            self.startstop_button.direction = digitalio.Direction.INPUT
-            self.startstop_button.pull = digitalio.Pull.UP
+            startstop_pin = digitalio.DigitalInOut(config.gpio_startstop_button)
+            startstop_pin.direction = digitalio.Direction.INPUT
+            startstop_pin.pull = digitalio.Pull.UP
+            self.startstop_button = Debouncer(startstop_pin)
 
-            log.info("GPIO buttons initialized successfully")
+            log.info("GPIO buttons initialized successfully with debouncing")
 
         except Exception as e:
             log.error(f"Failed to initialize GPIO buttons: {e}")
@@ -196,11 +194,14 @@ class ButtonManager(threading.Thread):
         self.running = False
         log.info("Button manager stopped")
 
-    def is_button_pressed(self, button):
-        """Check if button is pressed (accounting for pull-up resistor)"""
-        if button is None:
-            return False
-        return not button.value  # Pressed = low with pull-up
+    def update_buttons(self):
+        """Update debouncer state - samples pins and tracks values over time.
+        Must be called regularly for .fell and .rose properties to work.
+        Default debounce interval is 10ms - input must be stable that long."""
+        if self.program_button:
+            self.program_button.update()
+        if self.startstop_button:
+            self.startstop_button.update()
 
     def send_api_command(self, command, **kwargs):
         """Send command to kiln controller API"""
@@ -232,14 +233,6 @@ class ButtonManager(threading.Thread):
 
     def handle_program_button(self):
         """Handle program cycle button press"""
-        current_time = time.time()
-
-        # Debounce check
-        if current_time - self.last_program_press < self.DEBOUNCE_TIME:
-            return
-
-        self.last_program_press = current_time
-
         # Only work in IDLE state
         if self.oven.state != "IDLE":
             log.info("Program button ignored - kiln not in IDLE state")
@@ -247,7 +240,7 @@ class ButtonManager(threading.Thread):
 
         # Enter or continue selection mode
         self.in_selection_mode = True
-        self.last_selection_activity = current_time
+        self.last_selection_activity = time.time()
 
         # Cycle to next profile
         profile = self.profile_manager.cycle_to_next()
@@ -261,14 +254,6 @@ class ButtonManager(threading.Thread):
 
     def handle_startstop_button(self):
         """Handle start/stop button press"""
-        current_time = time.time()
-
-        # Debounce check
-        if current_time - self.last_startstop_press < self.DEBOUNCE_TIME:
-            return
-
-        self.last_startstop_press = current_time
-
         if self.oven.state == "IDLE":
             self.handle_start()
         elif self.oven.state in ["RUNNING", "PAUSED"]:
@@ -336,12 +321,14 @@ class ButtonManager(threading.Thread):
 
         while self.running:
             try:
-                # Check program button
-                if self.is_button_pressed(self.program_button):
+                # Update button debouncers
+                self.update_buttons()
+
+                # Check for button press events (fell = pressed with pull-up)
+                if self.program_button and self.program_button.fell:
                     self.handle_program_button()
 
-                # Check start/stop button
-                if self.is_button_pressed(self.startstop_button):
+                if self.startstop_button and self.startstop_button.fell:
                     self.handle_startstop_button()
 
                 # Check selection timeout
