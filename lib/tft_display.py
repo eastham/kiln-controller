@@ -83,11 +83,16 @@ class TFTDisplay(threading.Thread):
             self.image = Image.new("RGB", (self.draw_width, self.draw_height))
             self.draw = ImageDraw.Draw(self.image)
 
-            # Simple font loading - keep it minimal
-            self.font_large = ImageFont.load_default()
-            self.font_medium = ImageFont.load_default()
-            self.font_small = ImageFont.load_default()
-            log.info("Using default fonts only")
+            # Load fonts
+            try:
+                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
+                self.font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+                self.font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
+            except OSError:
+                self.font_large = ImageFont.load_default()
+                self.font_medium = ImageFont.load_default()
+                self.font_small = ImageFont.load_default()
+                log.warning("Could not load DejaVu fonts, using default font")
 
             # Clear display
             self.clear_display()
@@ -183,7 +188,7 @@ class TFTDisplay(threading.Thread):
         time_str = self.format_time(time_remaining)
         self.draw.text((165, 5), time_str, font=self.font_medium, fill=self.GREEN)
 
-        # Center: Current temperature (large)
+        # Center: Current temperature
         try:
             current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
         except:
