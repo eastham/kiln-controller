@@ -207,8 +207,10 @@ class TFTDisplay(threading.Thread):
         # Center: Current temperature
         try:
             current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
+            log.info(f"TFT display temp reading: raw={self.oven.board.temp_sensor.temperature():.2f}, offset={config.thermocouple_offset}, final={current_temp:.2f}")
         except:
             current_temp = None
+            log.warning("TFT display failed to read temperature")
         current_temp_str = self.format_temperature(current_temp)
         self.draw.text((50, 35), current_temp_str, font=self.font_large, fill=self.WHITE)
 
