@@ -127,7 +127,7 @@ class TFTDisplay(threading.Thread):
             return "---"
 
         unit = "°F" if config.temp_scale.lower() == "f" else "°C"
-        return f"{temp:.1f}{unit}"
+        return f"{int(temp)}{unit}"
 
     def format_time(self, seconds):
         """Format time in HH:MM:SS format"""
@@ -202,7 +202,7 @@ class TFTDisplay(threading.Thread):
         runtime = getattr(self.oven, 'runtime', 0)
         time_remaining = max(0, total_time - runtime)
         time_str = self.format_time(time_remaining)
-        self.draw.text((165, 5), time_str, font=self.font_medium, fill=self.GREEN)
+        self.draw.text((160, 5), time_str, font=self.font_medium, fill=self.GREEN)
 
         # Center: Current temperature
         try:
