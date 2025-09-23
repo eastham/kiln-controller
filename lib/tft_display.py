@@ -67,12 +67,21 @@ class TFTDisplay(threading.Thread):
                 baudrate=24000000  # Higher speed for smoother updates
             )
 
-            # Create drawing objects using display's actual dimensions
-            # Log dimensions for debugging
+            # Create drawing objects using rotated dimensions
+            # With 90 degree rotation, width and height are swapped for the image
             log.info(f"Display dimensions after init: {self.disp.width} x {self.disp.height}")
             log.info(f"Physical dimensions: {self.width} x {self.height}")
 
-            self.image = Image.new("RGB", (self.disp.width, self.disp.height))
+            # For 90-degree rotation, swap width and height for image creation
+            if self.rotation == 90:
+                image_width = self.disp.height  # 240
+                image_height = self.disp.width  # 135
+            else:
+                image_width = self.disp.width
+                image_height = self.disp.height
+
+            log.info(f"Creating image with dimensions: {image_width} x {image_height}")
+            self.image = Image.new("RGB", (image_width, image_height))
             self.draw = ImageDraw.Draw(self.image)
 
             # Load fonts
@@ -98,7 +107,7 @@ class TFTDisplay(threading.Thread):
     def clear_display(self):
         """Clear the display with black background"""
         if self.disp:
-            self.draw.rectangle((0, 0, self.disp.width, self.disp.height), fill=self.BLACK)
+            self.draw.rectangle((0, 0, 240, 135), fill=self.BLACK)
             with spi_lock():
                 self.disp.image(self.image)
 
@@ -139,7 +148,7 @@ class TFTDisplay(threading.Thread):
         """Draw status bar at top of display"""
         # Status bar background
         status_color = self.get_status_color()
-        self.draw.rectangle((0, 0, self.disp.width, 25), fill=status_color)
+        self.draw.rectangle((0, 0, 240, 25), fill=status_color)
 
         # Status text
         status_text = getattr(self.oven, 'state', 'UNKNOWN')
@@ -155,7 +164,7 @@ class TFTDisplay(threading.Thread):
         section_height = 70
 
         # Section background
-        self.draw.rectangle((0, y_start, self.disp.width, y_start + section_height),
+        self.draw.rectangle((0, y_start, 240, y_start + section_height),
                            fill=self.BLACK, outline=self.WHITE)
 
         # Current temperature
@@ -181,7 +190,7 @@ class TFTDisplay(threading.Thread):
         section_height = 50
 
         # Section background
-        self.draw.rectangle((0, y_start, self.disp.width, y_start + section_height),
+        self.draw.rectangle((0, y_start, 240, y_start + section_height),
                            fill=self.BLACK, outline=self.WHITE)
 
         # Calculate time remaining
@@ -201,7 +210,7 @@ class TFTDisplay(threading.Thread):
         section_height = 40
 
         # Section background
-        self.draw.rectangle((0, y_start, self.disp.width, y_start + section_height),
+        self.draw.rectangle((0, y_start, 240, y_start + section_height),
                            fill=self.BLACK, outline=self.WHITE)
 
         # Heat status
@@ -227,7 +236,7 @@ class TFTDisplay(threading.Thread):
 
         try:
             # Clear display
-            self.draw.rectangle((0, 0, self.disp.width, self.disp.height), fill=self.BLACK)
+            self.draw.rectangle((0, 0, 240, 135), fill=self.BLACK)
 
             # Check for special display modes
             if self.message_mode and time.time() < self.message_expire_time:
@@ -290,7 +299,7 @@ class TFTDisplay(threading.Thread):
         """Draw temporary message"""
         # Center the message
         message_lines = self.message_text.split('\n')
-        y_start = (self.disp.height - len(message_lines) * 20) // 2
+        y_start = (135 - len(message_lines) * 20) // 2
 
         for i, line in enumerate(message_lines):
             self.draw.text((5, y_start + i * 20), line, font=self.font_medium, fill=self.YELLOW)
