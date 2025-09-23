@@ -196,11 +196,15 @@ class TFTDisplay(threading.Thread):
             log.info(f"display clear done")
 
             # Check for special display modes
+            log.info(f"Display mode check: message_mode={self.message_mode}, selection_mode={self.selection_mode}, selected_profile={self.selected_profile is not None}")
             if self.message_mode and time.time() < self.message_expire_time:
+                log.info("Drawing message mode")
                 self.draw_message()
             elif self.selection_mode and self.selected_profile:
+                log.info(f"Drawing program selection: {self.selected_profile['name'] if self.selected_profile else 'None'}")
                 self.draw_program_selection()
             else:
+                log.info("Drawing normal status")
                 # Normal kiln status display
                 self.draw_normal_status()
             log.info(f"display draw done")
@@ -233,10 +237,10 @@ class TFTDisplay(threading.Thread):
         time_str = self.format_time(time_remaining)
         self.draw.text((160, 5), time_str, font=self.font_medium, fill=self.GREEN)
 
-        # Center: Current temperature
+        # Center: Current temperature (use last reading from TempTracker)
         try:
-            current_temp = self.oven.board.temp_sensor.get_temperature() + config.thermocouple_offset
-            log.info(f"TFT display temp reading: {current_temp:.2f} (should match oven temp)")
+            current_temp = self.oven.board.temp_sensor.temptracker.get_last_temp() + config.thermocouple_offset
+            log.info(f"TFT display temp reading: {current_temp:.2f} (last reading)")
         except Exception as e:
             current_temp = None
             log.warning(f"TFT display failed to read temperature: {e}")
@@ -315,7 +319,7 @@ class TFTDisplay(threading.Thread):
 
     def force_update(self):
         """Force an immediate display update (called by button manager)"""
-        if self.disp and self.running:
+        if self.disp:
             try:
                 self._do_update()  # Bypass the selection mode check
             except Exception as e:
@@ -346,7 +350,7 @@ class TFTDisplay(threading.Thread):
         while self.running:
             try:
                 self.update_display()
-                time.sleep(5)  # Update every 0.5 seconds for more responsive display
+                time.sleep(5)
             except Exception as e:
                 log.error(f"Error in TFT display loop: {e}")
                 time.sleep(2)  # Wait longer on error

@@ -185,6 +185,12 @@ class TempTracker(object):
         '''
         return statistics.median(self.temps)
 
+    def get_last_temp(self):
+        '''
+        get the most recent temperature reading
+        '''
+        return self.temps[-1] if self.temps else 0
+
 class ThermocoupleTracker(object):
     '''Keeps sliding window to track successful/failed calls to get temp
        over the last two duty cycles.
