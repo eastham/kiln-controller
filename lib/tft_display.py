@@ -59,18 +59,20 @@ class TFTDisplay(threading.Thread):
             time.sleep(0.1)
 
             # Initialize display with offset parameters for proper alignment
-            self.disp = st7789.ST7789(
-                board.SPI(),
-                rotation=self.rotation,
-                width=self.width,
-                height=self.height,
-                x_offset=53,       # X offset for 135x240 display (per Adafruit docs)
-                y_offset=40,       # Y offset for 135x240 display (per Adafruit docs)
-                cs=cs_pin,
-                dc=dc_pin,
-                rst=reset_pin,
-                baudrate=60000000
-            )
+            # Use SPI lock during initialization to prevent conflicts
+            with spi_lock():
+                self.disp = st7789.ST7789(
+                    board.SPI(),
+                    rotation=self.rotation,
+                    width=self.width,
+                    height=self.height,
+                    x_offset=53,       # X offset for 135x240 display (per Adafruit docs)
+                    y_offset=40,       # Y offset for 135x240 display (per Adafruit docs)
+                    cs=cs_pin,
+                    dc=dc_pin,
+                    rst=reset_pin,
+                    baudrate=60000000
+                )
 
             # Add initialization delay and explicit reset
             time.sleep(0.2)
