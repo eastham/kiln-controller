@@ -368,15 +368,35 @@ def get_config():
         "time_scale_slope": config.time_scale_slope,
         "time_scale_profile": config.time_scale_profile,
         "kwh_rate": config.kwh_rate,
-        "currency_type": config.currency_type})    
+        "currency_type": config.currency_type})
+
+def emergency_shutdown():
+    """Emergency shutdown: turn off heat and clean up resources"""
+    # Critical: Turn off heat immediately for safety
+    try:
+        if 'oven' in globals() and oven:
+            oven.abort_run()
+            log.info("Emergency shutdown: kiln heat turned off")
+    except Exception as e:
+        log.error(f"Failed to turn off heat during shutdown: {e}")
+
+    # Clean up display and buttons
+    try:
+        if 'tft_display' in globals() and tft_display:
+            tft_display.stop_display()
+    except Exception as e:
+        log.error(f"Error stopping TFT display: {e}")
+
+    try:
+        if 'button_manager' in globals() and button_manager:
+            button_manager.stop_button_manager()
+    except Exception as e:
+        log.error(f"Error stopping button manager: {e}")
 
 def signal_handler(signum, frame):
     """Handle shutdown signals gracefully"""
     log.info("Received shutdown signal, cleaning up...")
-    if 'tft_display' in globals() and tft_display:
-        tft_display.stop_display()
-    if 'button_manager' in globals() and button_manager:
-        button_manager.stop_button_manager()
+    emergency_shutdown()
     sys.exit(0)
 
 def main():
@@ -396,16 +416,10 @@ def main():
         server.serve_forever()
     except KeyboardInterrupt:
         log.info("Keyboard interrupt received, shutting down...")
-        if tft_display:
-            tft_display.stop_display()
-        if button_manager:
-            button_manager.stop_button_manager()
+        emergency_shutdown()
     except Exception as e:
         log.error(f"Server error: {e}")
-        if tft_display:
-            tft_display.stop_display()
-        if button_manager:
-            button_manager.stop_button_manager()
+        emergency_shutdown()
         raise
 
 

@@ -264,7 +264,7 @@ class TFTDisplay(threading.Thread):
 
         # Combine target temp and duty cycle
         target_display = target_temp_str + duty_cycle_str
-        self.draw.text((55, 85), target_display, font=self.font_medium, fill=self.YELLOW)
+        self.draw.text((45, 85), target_display, font=self.font_medium, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""

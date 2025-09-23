@@ -298,10 +298,14 @@ class ButtonManager(threading.Thread):
                 log.info(f"Maintaining program selection: {current_profile['name']}")
                 self.in_selection_mode = True
                 self.last_selection_activity = time.time()
-                # Don't update display - let it show normal status
+                # Update display to show program selection
+                if self.tft_display:
+                    self.tft_display.set_selection_mode(current_profile)
             else:
                 # No program selected, exit selection mode
                 self.in_selection_mode = False
+                if self.tft_display:
+                    self.tft_display.exit_selection_mode()
 
     def check_selection_timeout(self):
         """Check if selection mode should timeout"""
