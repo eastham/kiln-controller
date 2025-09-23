@@ -147,7 +147,7 @@ class TFTDisplay(threading.Thread):
         """Draw status bar at top of display"""
         # Status bar background
         status_color = self.get_status_color()
-        self.draw.rectangle((0, 0, self.draw_width, 25), fill=status_color)
+        self.draw.rectangle((0, 0, self.draw_width, 20), fill=status_color)
 
         # Status text
         status_text = getattr(self.oven, 'state', 'UNKNOWN')
@@ -160,7 +160,7 @@ class TFTDisplay(threading.Thread):
 
     def draw_temperature_section(self, y_start):
         """Draw current and target temperature section"""
-        section_height = 70
+        section_height = 50
 
         # Section background
         self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
@@ -173,20 +173,20 @@ class TFTDisplay(threading.Thread):
             current_temp = None
 
         current_temp_str = self.format_temperature(current_temp)
-        self.draw.text((5, y_start + 5), "Current:", font=self.font_small, fill=self.WHITE)
-        self.draw.text((5, y_start + 25), current_temp_str, font=self.font_large, fill=self.WHITE)
+        self.draw.text((5, y_start + 3), "Current:", font=self.font_small, fill=self.WHITE)
+        self.draw.text((5, y_start + 18), current_temp_str, font=self.font_medium, fill=self.WHITE)
 
         # Target temperature
         target_temp = getattr(self.oven, 'target', 0)
         target_temp_str = self.format_temperature(target_temp)
-        self.draw.text((5, y_start + 55), f"Target: {target_temp_str}",
-                      font=self.font_medium, fill=self.YELLOW)
+        self.draw.text((5, y_start + 38), "Target: {}".format(target_temp_str),
+                      font=self.font_small, fill=self.YELLOW)
 
         return y_start + section_height
 
     def draw_time_section(self, y_start):
         """Draw time remaining section"""
-        section_height = 50
+        section_height = 35
 
         # Section background
         self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
@@ -199,14 +199,14 @@ class TFTDisplay(threading.Thread):
 
         time_str = self.format_time(time_remaining)
 
-        self.draw.text((5, y_start + 5), "Time Left:", font=self.font_small, fill=self.WHITE)
-        self.draw.text((5, y_start + 25), time_str, font=self.font_medium, fill=self.GREEN)
+        self.draw.text((5, y_start + 3), "Time Left:", font=self.font_small, fill=self.WHITE)
+        self.draw.text((5, y_start + 18), time_str, font=self.font_small, fill=self.GREEN)
 
         return y_start + section_height
 
     def draw_heat_section(self, y_start):
         """Draw heating status section"""
-        section_height = 40
+        section_height = 30
 
         # Section background
         self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
@@ -217,14 +217,14 @@ class TFTDisplay(threading.Thread):
         heat_text = "HEATING" if heat_on else "OFF"
         heat_color = self.RED if heat_on else self.GRAY
 
-        self.draw.text((5, y_start + 5), "Heat:", font=self.font_small, fill=self.WHITE)
-        self.draw.text((5, y_start + 20), heat_text, font=self.font_medium, fill=heat_color)
+        self.draw.text((5, y_start + 3), "Heat:", font=self.font_small, fill=self.WHITE)
+        self.draw.text((5, y_start + 15), heat_text, font=self.font_small, fill=heat_color)
 
         # Heat rate if available
         if hasattr(self.oven, 'heat_rate'):
             rate_unit = "°F/hr" if config.temp_scale.lower() == "f" else "°C/hr"
-            rate_text = f"{self.oven.heat_rate:.1f} {rate_unit}"
-            self.draw.text((100, y_start + 20), rate_text, font=self.font_small, fill=self.WHITE)
+            rate_text = "{:.1f} {}".format(self.oven.heat_rate, rate_unit)
+            self.draw.text((80, y_start + 15), rate_text, font=self.font_small, fill=self.WHITE)
 
         return y_start + section_height
 
@@ -260,15 +260,15 @@ class TFTDisplay(threading.Thread):
 
         # Status bar
         self.draw_status_bar()
-        y_pos += 30
+        y_pos += 25
 
         # Temperature section
         y_pos = self.draw_temperature_section(y_pos)
-        y_pos += 5
+        y_pos += 2
 
         # Time section
         y_pos = self.draw_time_section(y_pos)
-        y_pos += 5
+        y_pos += 2
 
         # Heat section
         self.draw_heat_section(y_pos)
