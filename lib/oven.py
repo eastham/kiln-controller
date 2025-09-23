@@ -543,15 +543,25 @@ class Oven(threading.Thread):
             duplog.info("automatic restart not possible. state file does not exist or is too old.")
             return False
 
-        with open(config.automatic_restart_state_file) as infile:
-            d = json.load(infile)
+        try:
+            with open(config.automatic_restart_state_file) as infile:
+                d = json.load(infile)
+        except (json.JSONDecodeError, OSError) as e:
+            duplog.warning("automatic restart not possible. Failed to read state file: %s" % e)
+            return False
+
         if d["state"] != "RUNNING":
             duplog.info("automatic restart not possible. state = %s" % (d["state"]))
             return False
         return True
 
     def automatic_restart(self):
-        with open(config.automatic_restart_state_file) as infile: d = json.load(infile)
+        try:
+            with open(config.automatic_restart_state_file) as infile:
+                d = json.load(infile)
+        except (json.JSONDecodeError, OSError) as e:
+            log.error("Failed to read state file for automatic restart: %s" % e)
+            return False
         startat = d["runtime"]/60
         filename = "%s.json" % (d["profile"])
         profile_path = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..', 'storage','profiles',filename))
