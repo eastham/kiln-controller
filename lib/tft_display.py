@@ -83,8 +83,11 @@ class TFTDisplay(threading.Thread):
             self.image = Image.new("RGB", (self.draw_width, self.draw_height))
             self.draw = ImageDraw.Draw(self.image)
 
-            # No font loading needed - we're only drawing rectangles like the test
-            log.info("TFT display using rectangle-only display (no fonts needed)")
+            # Simple font loading - keep it minimal
+            self.font_large = ImageFont.load_default()
+            self.font_medium = ImageFont.load_default()
+            self.font_small = ImageFont.load_default()
+            log.info("Using default fonts only")
 
             # Clear display
             self.clear_display()
@@ -161,22 +164,34 @@ class TFTDisplay(threading.Thread):
             log.error(f"Error updating TFT display: {e}")
 
     def draw_normal_status(self):
-        """Draw simplified display - following test logic exactly (rectangles only)"""
-        # Clear background - exactly like the test
+        """Draw simplified status display with text"""
+        # Clear background
         self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
 
-        # Upper left: Mode/State indicator (colored rectangle)
+        # Upper left: Mode/State
+        state = getattr(self.oven, 'state', 'IDLE')
         state_color = self.get_status_color()
-        self.draw.rectangle((5, 5, 60, 25), fill=state_color)
+        self.draw.text((5, 5), state, font=self.font_small, fill=state_color)
 
-        # Upper right: Time indicator (green rectangle)
-        self.draw.rectangle((180, 5, 235, 25), fill=self.GREEN)
+        # Upper right: Time left
+        total_time = getattr(self.oven, 'totaltime', 0)
+        runtime = getattr(self.oven, 'runtime', 0)
+        time_remaining = max(0, total_time - runtime)
+        time_str = self.format_time(time_remaining)
+        self.draw.text((165, 5), time_str, font=self.font_small, fill=self.GREEN)
 
-        # Center: Current temperature indicator (large white rectangle)
-        self.draw.rectangle((80, 45, 160, 75), fill=self.WHITE)
+        # Center: Current temperature
+        try:
+            current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
+        except:
+            current_temp = None
+        current_temp_str = self.format_temperature(current_temp)
+        self.draw.text((85, 50), current_temp_str, font=self.font_small, fill=self.WHITE)
 
-        # Below: Target temperature indicator (yellow rectangle)
-        self.draw.rectangle((80, 85, 160, 110), fill=self.YELLOW)
+        # Below: Target temperature
+        target_temp = getattr(self.oven, 'target', 0)
+        target_temp_str = self.format_temperature(target_temp)
+        self.draw.text((85, 85), target_temp_str, font=self.font_small, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""
