@@ -189,42 +189,27 @@ class TFTDisplay(threading.Thread):
 
     def _do_update(self):
         """Internal method that actually performs the display update"""
-        log.info(f"_do_update() called - selection_mode={self.selection_mode}, message_mode={self.message_mode}")
         try:
             # Fast clear using pre-created black image
-            log.info(f"clearing display")
-
             self.image.paste(self.black_image)
-            log.info(f"display clear done")
-
-            # Check for special display modes
-            log.info(f"Display mode check: message_mode={self.message_mode}, selection_mode={self.selection_mode}, selected_profile={self.selected_profile is not None}")
-            current_time = time.time()
 
             # Check if message mode is active and not expired
-            if self.message_mode and current_time < self.message_expire_time:
-                log.info(f"Drawing message mode (expires in {self.message_expire_time - current_time:.1f}s)")
+            if self.message_mode and time.time() < self.message_expire_time:
                 self.draw_message()
-            else:
-                # Clear expired message mode
-                if self.message_mode:
-                    log.info(f"Message mode expired ({current_time - self.message_expire_time:.1f}s ago), clearing")
-                    self.message_mode = False
+            elif self.message_mode:
+                # Message expired, clear it and fall through
+                self.message_mode = False
 
-                # Now check other display modes
+            if not self.message_mode:
                 if self.selection_mode and self.selected_profile:
-                    log.info(f"Drawing program selection: {self.selected_profile['name'] if self.selected_profile else 'None'}")
                     self.draw_program_selection()
                 else:
-                    log.info("Drawing normal status")
                     # Normal kiln status display
                     self.draw_normal_status()
-            log.info(f"display draw done")
 
             # Update display
             with spi_lock():
                 self.disp.image(self.image)
-            log.info("Display update completed")
 
         except Exception as e:
             log.error(f"Error updating TFT display: {e}")
@@ -310,17 +295,16 @@ class TFTDisplay(threading.Thread):
 
     def set_selection_mode(self, profile):
         """Enter program selection mode"""
-        log.info(f"Setting selection mode with profile: {profile['name'] if profile else 'None'}")
         self.selection_mode = True
         self.selected_profile = profile
         self.message_mode = False  # Clear any active message
-        log.info(f"Selection mode set: selection_mode={self.selection_mode}, selected_profile={self.selected_profile is not None}")
         self.force_update()  # Immediate update for button responsiveness
 
     def exit_selection_mode(self):
-        """Exit program selection mode"""
+        """Exit program selection mode and return to normal display"""
         self.selection_mode = False
         self.selected_profile = None
+        self.message_mode = False  # Clear any active messages too
         self.force_update()  # Immediate update for button responsiveness
 
     def show_message(self, message, duration_seconds):
@@ -333,14 +317,11 @@ class TFTDisplay(threading.Thread):
 
     def force_update(self):
         """Force an immediate display update (called by button manager)"""
-        log.info(f"force_update() called - selection_mode={self.selection_mode}, disp={self.disp is not None}")
         if self.disp:
             try:
                 self._do_update()  # Bypass the selection mode check
             except Exception as e:
                 log.error(f"Error in forced display update: {e}")
-        else:
-            log.warning("force_update() skipped - no display")
 
     def start_display(self):
         """Start the display update thread"""
