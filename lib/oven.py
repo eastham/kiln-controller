@@ -120,7 +120,7 @@ class TempSensorReal(TempSensor):
     '''
     def __init__(self):
         TempSensor.__init__(self)
-        self.sleeptime = self.time_step / float(g.temperature_average_samples)
+        self.sleeptime = self.time_step / float(config.temperature_average_samples)
         self.temptracker = TempTracker() 
         self.spi_setup()
         self.cs = digitalio.DigitalInOut(config.spi_cs)
@@ -134,7 +134,7 @@ class TempSensorReal(TempSensor):
         else:
             import board
             self.spi = board.SPI()
-            #self.spi.configure(baudrate=100000, polarity=1, phase=1)
+            #self.spi.configure(baudrate=100000, polarity=1, phase=1) q
             log.info("Hardware SPI selected for reading thermocouple")
 
     def get_temperature(self):
