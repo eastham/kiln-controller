@@ -65,8 +65,32 @@ def main():
         # Create mock oven
         mock_oven = MockOven()
 
-        # Create and start TFT display
+        # Create TFT display
         tft_display = TFTDisplay(mock_oven)
+
+        if not tft_display.disp:
+            log.error("TFT display failed to initialize")
+            return
+
+        log.info("TFT display initialized successfully")
+
+        # Do a simple test draw - fill screen with red
+        log.info("Drawing simple red screen test...")
+        tft_display.draw.rectangle((0, 0, 240, 135), fill=(255, 0, 0))
+        with spi_lock():
+            tft_display.disp.image(tft_display.image)
+
+        time.sleep(2)
+
+        # Clear to black
+        log.info("Clearing to black...")
+        tft_display.draw.rectangle((0, 0, 240, 135), fill=(0, 0, 0))
+        with spi_lock():
+            tft_display.disp.image(tft_display.image)
+
+        time.sleep(2)
+
+        # Now start the display thread
         tft_display.start_display()
 
         log.info("TFT Display started. Running test for 30 seconds...")
