@@ -206,7 +206,7 @@ class TFTDisplay(threading.Thread):
 
         # Center: Current temperature
         try:
-            current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
+            current_temp = self.oven.board.temp_sensor.get_temperature() + config.thermocouple_offset
             log.info(f"TFT display temp reading: {current_temp:.2f} (should match oven temp)")
         except:
             current_temp = None
