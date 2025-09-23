@@ -28,7 +28,7 @@ class TFTDisplay(threading.Thread):
         self.height = 240  # Physical height (before rotation)
         self.rotation = 90  # Landscape orientation (swaps dimensions)
 
-        # Colors (R, G, B)
+        # Colors (R, G, B) - PIL format
         self.BLACK = (0, 0, 0)
         self.WHITE = (255, 255, 255)
         self.RED = (255, 0, 0)
@@ -160,6 +160,11 @@ class TFTDisplay(threading.Thread):
     def update_display(self):
         """Update the display with current kiln status"""
         if not self.disp:
+            return
+
+        # Skip periodic updates when in selection or message mode
+        # (forced updates will still work)
+        if self.selection_mode or self.message_mode:
             return
 
         try:
