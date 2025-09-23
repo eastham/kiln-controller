@@ -208,9 +208,9 @@ class TFTDisplay(threading.Thread):
         try:
             current_temp = self.oven.board.temp_sensor.get_temperature() + config.thermocouple_offset
             log.info(f"TFT display temp reading: {current_temp:.2f} (should match oven temp)")
-        except:
+        except Exception as e:
             current_temp = None
-            log.warning("TFT display failed to read temperature")
+            log.warning(f"TFT display failed to read temperature: {e}")
         current_temp_str = self.format_temperature(current_temp)
         self.draw.text((50, 35), current_temp_str, font=self.font_large, fill=self.WHITE)
 

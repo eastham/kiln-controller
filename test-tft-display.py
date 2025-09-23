@@ -33,6 +33,10 @@ class MockTempSensor:
         self.temp += 1
         return self.temp
 
+    def get_temperature(self):
+        # Same as temperature() for the mock - already in correct units
+        return self.temperature()
+
 class MockBoard:
     def __init__(self):
         self.temp_sensor = MockTempSensor()
