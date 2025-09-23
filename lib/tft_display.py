@@ -179,9 +179,10 @@ class TFTDisplay(threading.Thread):
         if not self.disp:
             return
 
-        # Skip periodic updates when in selection or message mode
+        # Skip periodic updates when in selection mode only
         # (forced updates will still work)
-        if self.selection_mode or self.message_mode:
+        # Allow periodic updates in message mode so expired messages get cleared
+        if self.selection_mode:
             return
 
         self._do_update()
