@@ -94,8 +94,8 @@ class TFTDisplay(threading.Thread):
 
             # Load fonts
             try:
-                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
-                self.font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
+                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 46)
+                self.font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 26)
                 self.font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
             except OSError:
                 self.font_large = ImageFont.load_default()
@@ -206,7 +206,7 @@ class TFTDisplay(threading.Thread):
         except:
             current_temp = None
         current_temp_str = self.format_temperature(current_temp)
-        self.draw.text((85, 50), current_temp_str, font=self.font_large, fill=self.WHITE)
+        self.draw.text((50, 35), current_temp_str, font=self.font_large, fill=self.WHITE)
 
         # Below: Target temperature
         target_temp = getattr(self.oven, 'target', 0)
@@ -217,18 +217,16 @@ class TFTDisplay(threading.Thread):
         """Draw program selection display"""
         profile = self.selected_profile
 
-        # Title
-
         # Program name (truncate if too long)
         name = profile['name']
         if len(name) > 18:
             name = name[:15] + "..."
-        self.draw.text((5, 25), name, font=self.font_large, fill=self.YELLOW)
+        self.draw.text((5, 25), name, font=self.font_medium, fill=self.YELLOW)
 
         # Max temp and duration
         temp_unit = "°F" if config.temp_scale.lower() == "f" else "°C"
         duration_text = f"Max: {profile['max_temp']:.0f}{temp_unit}  {profile['duration']:.1f}h"
-        self.draw.text((5, 50), duration_text, font=self.font_small, fill=self.WHITE)
+        self.draw.text((5, 70), duration_text, font=self.font_small, fill=self.WHITE)
 
         # Button hints
         self.draw.text((5, 75), "[CYCLE] [START]", font=self.font_small, fill=self.GREEN)
