@@ -308,3 +308,9 @@ try:
     gpio_startstop_button = board.D23  # Start/stop button (configurable)
 except (NotImplementedError,AttributeError):
     print("GPIO button pins not configured - probably running in simulation mode")
+
+# Default program for GPIO button selection
+# Set to None for no default, or specify the filename (without .json extension)
+# of a profile in the kiln_profiles_directory
+# Example: default_program = "cone-04-slow-bisque"
+default_program = "Strike"

@@ -27,6 +27,7 @@ class ProfileManager:
         self.profiles = []
         self.current_index = 0
         self.load_profiles()
+        self.set_default_profile()
 
     def load_profiles(self):
         """Load all available profiles from storage directory"""
@@ -60,6 +61,26 @@ class ProfileManager:
         except Exception as e:
             log.error(f"Failed to load profiles directory: {e}")
             self.profiles = []
+
+    def set_default_profile(self):
+        """Set the current index to the default program if specified in config"""
+        if hasattr(config, 'default_program') and config.default_program:
+            # Look for profile matching the default program name
+            for i, profile in enumerate(self.profiles):
+                profile_name = profile['filename'].replace('.json', '')
+                if profile_name == config.default_program:
+                    self.current_index = i
+                    log.info(f"Set default program to: {profile['name']} (index {i})")
+                    return
+
+            # Also try matching the display name
+            for i, profile in enumerate(self.profiles):
+                if profile['name'] == config.default_program:
+                    self.current_index = i
+                    log.info(f"Set default program to: {profile['name']} (index {i})")
+                    return
+
+            log.warning(f"Default program '{config.default_program}' not found in available profiles")
 
     def _get_max_temperature(self, data):
         """Extract maximum temperature from profile data"""
@@ -104,7 +125,7 @@ class ButtonManager(threading.Thread):
         self.api_url = f"http://localhost:{config.listening_port}/api"
 
         # Button timing constants
-        self.DEBOUNCE_TIME = 0.5  # Debounce delay in seconds
+        self.DEBOUNCE_TIME = 0.1  # Debounce delay in seconds
         self.SELECTION_TIMEOUT = 30  # Auto-exit program selection after N seconds
 
         # State management
@@ -120,6 +141,21 @@ class ButtonManager(threading.Thread):
         self.last_startstop_press = 0   # Last start/stop button press time
 
         self.init_buttons()
+
+        # Show default program on display if configured
+        self.show_default_program()
+
+    def show_default_program(self):
+        """Show default program on display if configured and available"""
+        if (hasattr(config, 'default_program') and config.default_program and
+            self.profile_manager.get_profile_count() > 0):
+
+            profile = self.profile_manager.get_current_profile()
+            if profile and self.tft_display:
+                log.info(f"Displaying default program: {profile['name']}")
+                self.in_selection_mode = True
+                self.last_selection_activity = time.time()
+                self.tft_display.set_selection_mode(profile)
 
     def init_buttons(self):
         """Initialize GPIO buttons"""

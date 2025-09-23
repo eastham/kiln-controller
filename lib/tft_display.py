@@ -229,7 +229,7 @@ class TFTDisplay(threading.Thread):
         self.draw.text((5, 70), duration_text, font=self.font_small, fill=self.WHITE)
 
         # Button hints
-        self.draw.text((5, 75), "[CYCLE] [START]", font=self.font_small, fill=self.GREEN)
+        self.draw.text((5, 85), "top button to start", font=self.font_small, fill=self.GREEN)
 
     def draw_message(self):
         """Draw temporary message"""
