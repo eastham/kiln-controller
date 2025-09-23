@@ -143,90 +143,6 @@ class TFTDisplay(threading.Thread):
         else:
             return self.RED
 
-    def draw_status_bar(self):
-        """Draw status bar at top of display"""
-        # Status bar background
-        status_color = self.get_status_color()
-        self.draw.rectangle((0, 0, self.draw_width, 20), fill=status_color)
-
-        # Status text
-        status_text = getattr(self.oven, 'state', 'UNKNOWN')
-        profile_name = getattr(self.oven.profile, 'name', '') if hasattr(self.oven, 'profile') and self.oven.profile else ''
-
-        if profile_name:
-            status_text += f" - {profile_name}"
-
-        self.draw.text((5, 2), status_text, font=self.font_small, fill=self.BLACK)
-
-    def draw_temperature_section(self, y_start):
-        """Draw current and target temperature section"""
-        section_height = 50
-
-        # Section background
-        self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
-                           fill=self.BLACK, outline=self.WHITE)
-
-        # Current temperature
-        try:
-            current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
-        except:
-            current_temp = None
-
-        current_temp_str = self.format_temperature(current_temp)
-        self.draw.text((5, y_start + 3), "Current:", font=self.font_small, fill=self.WHITE)
-        self.draw.text((5, y_start + 18), current_temp_str, font=self.font_medium, fill=self.WHITE)
-
-        # Target temperature
-        target_temp = getattr(self.oven, 'target', 0)
-        target_temp_str = self.format_temperature(target_temp)
-        self.draw.text((5, y_start + 38), "Target: {}".format(target_temp_str),
-                      font=self.font_small, fill=self.YELLOW)
-
-        return y_start + section_height
-
-    def draw_time_section(self, y_start):
-        """Draw time remaining section"""
-        section_height = 35
-
-        # Section background
-        self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
-                           fill=self.BLACK, outline=self.WHITE)
-
-        # Calculate time remaining
-        total_time = getattr(self.oven, 'totaltime', 0)
-        runtime = getattr(self.oven, 'runtime', 0)
-        time_remaining = max(0, total_time - runtime)
-
-        time_str = self.format_time(time_remaining)
-
-        self.draw.text((5, y_start + 3), "Time Left:", font=self.font_small, fill=self.WHITE)
-        self.draw.text((5, y_start + 18), time_str, font=self.font_small, fill=self.GREEN)
-
-        return y_start + section_height
-
-    def draw_heat_section(self, y_start):
-        """Draw heating status section"""
-        section_height = 30
-
-        # Section background
-        self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
-                           fill=self.BLACK, outline=self.WHITE)
-
-        # Heat status
-        heat_on = getattr(self.oven, 'heat', 0) > 0
-        heat_text = "HEATING" if heat_on else "OFF"
-        heat_color = self.RED if heat_on else self.GRAY
-
-        self.draw.text((5, y_start + 3), "Heat:", font=self.font_small, fill=self.WHITE)
-        self.draw.text((5, y_start + 15), heat_text, font=self.font_small, fill=heat_color)
-
-        # Heat rate if available
-        if hasattr(self.oven, 'heat_rate'):
-            rate_unit = "°F/hr" if config.temp_scale.lower() == "f" else "°C/hr"
-            rate_text = "{:.1f} {}".format(self.oven.heat_rate, rate_unit)
-            self.draw.text((80, y_start + 15), rate_text, font=self.font_small, fill=self.WHITE)
-
-        return y_start + section_height
 
     def update_display(self):
         """Update the display with current kiln status"""
@@ -254,24 +170,40 @@ class TFTDisplay(threading.Thread):
             log.error(f"Error updating TFT display: {e}")
 
     def draw_normal_status(self):
-        """Draw normal kiln status display"""
-        # Draw sections
-        y_pos = 0
+        """Draw simplified 4-corner status display"""
+        # Clear background
+        self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
 
-        # Status bar
-        self.draw_status_bar()
-        y_pos += 25
+        # Upper left: Mode/State
+        state = getattr(self.oven, 'state', 'IDLE')
+        state_color = self.get_status_color()
+        self.draw.text((5, 5), state, font=self.font_medium, fill=state_color)
 
-        # Temperature section
-        y_pos = self.draw_temperature_section(y_pos)
-        y_pos += 2
+        # Upper right: Time left
+        total_time = getattr(self.oven, 'totaltime', 0)
+        runtime = getattr(self.oven, 'runtime', 0)
+        time_remaining = max(0, total_time - runtime)
+        time_str = self.format_time(time_remaining)
+        # Right-align by calculating text width
+        time_bbox = self.draw.textbbox((0, 0), time_str, font=self.font_medium)
+        time_width = time_bbox[2] - time_bbox[0]
+        self.draw.text((self.draw_width - time_width - 5, 5), time_str, font=self.font_medium, fill=self.GREEN)
 
-        # Time section
-        y_pos = self.draw_time_section(y_pos)
-        y_pos += 2
+        # Lower left: Current temperature
+        try:
+            current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
+        except:
+            current_temp = None
+        current_temp_str = self.format_temperature(current_temp)
+        self.draw.text((5, self.draw_height - 35), current_temp_str, font=self.font_large, fill=self.WHITE)
 
-        # Heat section
-        self.draw_heat_section(y_pos)
+        # Lower right: Target temperature
+        target_temp = getattr(self.oven, 'target', 0)
+        target_temp_str = self.format_temperature(target_temp)
+        # Right-align target temp
+        target_bbox = self.draw.textbbox((0, 0), target_temp_str, font=self.font_large)
+        target_width = target_bbox[2] - target_bbox[0]
+        self.draw.text((self.draw_width - target_width - 5, self.draw_height - 35), target_temp_str, font=self.font_large, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""
