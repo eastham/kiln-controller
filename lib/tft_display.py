@@ -55,16 +55,18 @@ class TFTDisplay(threading.Thread):
             dc_pin = digitalio.DigitalInOut(config.tft_dc_pin)
             reset_pin = digitalio.DigitalInOut(config.tft_reset_pin)
 
-            # Initialize display
+            # Initialize display with offset parameters for proper alignment
             self.disp = st7789.ST7789(
                 board.SPI(),
                 rotation=self.rotation,
                 width=self.width,
                 height=self.height,
+                x_offset=53,       # X offset for 135x240 display (per Adafruit docs)
+                y_offset=40,       # Y offset for 135x240 display (per Adafruit docs)
                 cs=cs_pin,
                 dc=dc_pin,
                 rst=reset_pin,
-                baudrate=24000000  # Higher speed for smoother updates
+                baudrate=4000000   # Slower speed for more reliable operation
             )
 
             # Create drawing objects using rotated dimensions
@@ -72,16 +74,13 @@ class TFTDisplay(threading.Thread):
             log.info(f"Display dimensions after init: {self.disp.width} x {self.disp.height}")
             log.info(f"Physical dimensions: {self.width} x {self.height}")
 
-            # For 90-degree rotation, swap width and height for image creation
-            if self.rotation == 90:
-                image_width = self.disp.height  # 240
-                image_height = self.disp.width  # 135
-            else:
-                image_width = self.disp.width
-                image_height = self.disp.height
+            # For 90-degree rotation, we need to use the actual display dimensions
+            # The display reports 135x240 but with rotation=90, drawing area is 240x135
+            self.draw_width = 240   # Effective width after rotation
+            self.draw_height = 135  # Effective height after rotation
 
-            log.info(f"Creating image with dimensions: {image_width} x {image_height}")
-            self.image = Image.new("RGB", (image_width, image_height))
+            log.info("Creating image with dimensions: {} x {}".format(self.draw_width, self.draw_height))
+            self.image = Image.new("RGB", (self.draw_width, self.draw_height))
             self.draw = ImageDraw.Draw(self.image)
 
             # Load fonts
@@ -107,7 +106,7 @@ class TFTDisplay(threading.Thread):
     def clear_display(self):
         """Clear the display with black background"""
         if self.disp:
-            self.draw.rectangle((0, 0, 240, 135), fill=self.BLACK)
+            self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
             with spi_lock():
                 self.disp.image(self.image)
 
@@ -148,7 +147,7 @@ class TFTDisplay(threading.Thread):
         """Draw status bar at top of display"""
         # Status bar background
         status_color = self.get_status_color()
-        self.draw.rectangle((0, 0, 240, 25), fill=status_color)
+        self.draw.rectangle((0, 0, self.draw_width, 25), fill=status_color)
 
         # Status text
         status_text = getattr(self.oven, 'state', 'UNKNOWN')
@@ -164,7 +163,7 @@ class TFTDisplay(threading.Thread):
         section_height = 70
 
         # Section background
-        self.draw.rectangle((0, y_start, 240, y_start + section_height),
+        self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
                            fill=self.BLACK, outline=self.WHITE)
 
         # Current temperature
@@ -190,7 +189,7 @@ class TFTDisplay(threading.Thread):
         section_height = 50
 
         # Section background
-        self.draw.rectangle((0, y_start, 240, y_start + section_height),
+        self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
                            fill=self.BLACK, outline=self.WHITE)
 
         # Calculate time remaining
@@ -210,7 +209,7 @@ class TFTDisplay(threading.Thread):
         section_height = 40
 
         # Section background
-        self.draw.rectangle((0, y_start, 240, y_start + section_height),
+        self.draw.rectangle((0, y_start, self.draw_width, y_start + section_height),
                            fill=self.BLACK, outline=self.WHITE)
 
         # Heat status
@@ -236,7 +235,7 @@ class TFTDisplay(threading.Thread):
 
         try:
             # Clear display
-            self.draw.rectangle((0, 0, 240, 135), fill=self.BLACK)
+            self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
 
             # Check for special display modes
             if self.message_mode and time.time() < self.message_expire_time:
@@ -299,7 +298,7 @@ class TFTDisplay(threading.Thread):
         """Draw temporary message"""
         # Center the message
         message_lines = self.message_text.split('\n')
-        y_start = (135 - len(message_lines) * 20) // 2
+        y_start = (self.draw_height - len(message_lines) * 20) // 2
 
         for i, line in enumerate(message_lines):
             self.draw.text((5, y_start + i * 20), line, font=self.font_medium, fill=self.YELLOW)
