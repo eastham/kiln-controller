@@ -55,6 +55,9 @@ class TFTDisplay(threading.Thread):
             dc_pin = digitalio.DigitalInOut(config.tft_dc_pin)
             reset_pin = digitalio.DigitalInOut(config.tft_reset_pin)
 
+            # Add small delay for pin settling
+            time.sleep(0.1)
+
             # Initialize display with offset parameters for proper alignment
             self.disp = st7789.ST7789(
                 board.SPI(),
@@ -68,6 +71,9 @@ class TFTDisplay(threading.Thread):
                 rst=reset_pin,
                 baudrate=4000000   # Slower speed for more reliable operation
             )
+
+            # Add initialization delay and explicit reset
+            time.sleep(0.2)
 
             # Create drawing objects using rotated dimensions
             # With 90 degree rotation, width and height are swapped for the image
@@ -94,8 +100,11 @@ class TFTDisplay(threading.Thread):
                 self.font_small = ImageFont.load_default()
                 log.warning("Could not load DejaVu fonts, using default font")
 
-            # Clear display
-            self.clear_display()
+            # Clear display multiple times to ensure proper initialization
+            for i in range(3):
+                self.clear_display()
+                time.sleep(0.1)
+
             log.info("TFT Display initialized successfully")
 
         except Exception as e:
@@ -252,6 +261,8 @@ class TFTDisplay(threading.Thread):
     def start_display(self):
         """Start the display update thread"""
         if self.disp:
+            # Additional delay before starting updates
+            time.sleep(0.5)
             self.running = True
             self.start()
             log.info("TFT Display thread started")
