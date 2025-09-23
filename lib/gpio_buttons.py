@@ -306,10 +306,17 @@ class ButtonManager(threading.Thread):
         success = self.send_api_command("stop")
 
         if success:
-            # Exit selection mode if active
-            self.in_selection_mode = False
-            if self.tft_display:
-                self.tft_display.exit_selection_mode()
+            # Keep the current program selected after stopping
+            # This allows immediate restart with the same program
+            current_profile = self.profile_manager.get_current_profile()
+            if current_profile:
+                log.info(f"Maintaining program selection: {current_profile['name']}")
+                self.in_selection_mode = True
+                self.last_selection_activity = time.time()
+                # Don't update display - let it show normal status
+            else:
+                # No program selected, exit selection mode
+                self.in_selection_mode = False
 
     def check_selection_timeout(self):
         """Check if selection mode should timeout"""

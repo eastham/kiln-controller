@@ -117,7 +117,7 @@ class TFTDisplay(threading.Thread):
     def clear_display(self):
         """Clear the display with black background"""
         if self.disp:
-            self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
+            self.image.paste(self.black_image)
             with spi_lock():
                 self.disp.image(self.image)
 
@@ -179,6 +179,8 @@ class TFTDisplay(threading.Thread):
 
         except Exception as e:
             log.error(f"Error updating TFT display: {e}")
+        log.info(f"display update done")
+
 
     def draw_normal_status(self):
         """Draw simplified status display with text"""
