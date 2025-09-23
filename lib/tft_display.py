@@ -168,30 +168,33 @@ class TFTDisplay(threading.Thread):
         # Clear background
         self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
 
+        # Debug: Add a test rectangle to confirm display is working
+        self.draw.rectangle((235, 130, 240, 135), fill=self.RED)
+
         # Upper left: Mode/State
         state = getattr(self.oven, 'state', 'IDLE')
         state_color = self.get_status_color()
-        self.draw.text((5, 5), state, font=self.font_small, fill=state_color)
+        self.draw.text((5, 5), state, font=self.font_medium, fill=state_color)
 
         # Upper right: Time left
         total_time = getattr(self.oven, 'totaltime', 0)
         runtime = getattr(self.oven, 'runtime', 0)
         time_remaining = max(0, total_time - runtime)
         time_str = self.format_time(time_remaining)
-        self.draw.text((165, 5), time_str, font=self.font_small, fill=self.GREEN)
+        self.draw.text((165, 5), time_str, font=self.font_medium, fill=self.GREEN)
 
-        # Center: Current temperature
+        # Center: Current temperature (large)
         try:
             current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
         except:
             current_temp = None
         current_temp_str = self.format_temperature(current_temp)
-        self.draw.text((85, 50), current_temp_str, font=self.font_small, fill=self.WHITE)
+        self.draw.text((85, 50), current_temp_str, font=self.font_large, fill=self.WHITE)
 
         # Below: Target temperature
         target_temp = getattr(self.oven, 'target', 0)
         target_temp_str = self.format_temperature(target_temp)
-        self.draw.text((85, 85), target_temp_str, font=self.font_small, fill=self.YELLOW)
+        self.draw.text((85, 85), target_temp_str, font=self.font_medium, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""

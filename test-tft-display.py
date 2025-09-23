@@ -75,14 +75,14 @@ def main():
         tft_display.draw.rectangle((0, 0, 240, 135), fill=(255, 0, 0))
         tft_display.disp.image(tft_display.image)
 
-        time.sleep(2)
+        time.sleep(.5)
 
         # Clear to black
         log.info("Clearing to black...")
         tft_display.draw.rectangle((0, 0, 240, 135), fill=(0, 0, 0))
         tft_display.disp.image(tft_display.image)
 
-        time.sleep(2)
+        time.sleep(.5)
 
         # Now start the display thread
         tft_display.start_display()
