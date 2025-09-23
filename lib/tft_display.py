@@ -167,6 +167,10 @@ class TFTDisplay(threading.Thread):
         if self.selection_mode or self.message_mode:
             return
 
+        self._do_update()
+
+    def _do_update(self):
+        """Internal method that actually performs the display update"""
         try:
             # Fast clear using pre-created black image
             log.info(f"clearing display")
@@ -279,7 +283,7 @@ class TFTDisplay(threading.Thread):
         """Force an immediate display update (called by button manager)"""
         if self.disp and self.running:
             try:
-                self.update_display()
+                self._do_update()  # Bypass the selection mode check
             except Exception as e:
                 log.error(f"Error in forced display update: {e}")
 
