@@ -453,7 +453,10 @@ class Oven(threading.Thread):
         self.runtime = runtime_delta.total_seconds()
 
     def update_target_temp(self):
-        self.target = self.profile.get_target_temperature(self.runtime)
+        if self.profile:
+            self.target = self.profile.get_target_temperature(self.runtime)
+        else:
+            self.target = 0
 
     def reset_if_emergency(self):
         '''reset if the temperature is way TOO HOT, or other critical errors detected'''
