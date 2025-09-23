@@ -161,8 +161,8 @@ class TFTDisplay(threading.Thread):
             return
 
         try:
-            # Clear display
-            self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
+            # Fast clear using pre-created black image
+            self.image.paste(self.black_image)
 
             # Check for special display modes
             if self.message_mode and time.time() < self.message_expire_time:
