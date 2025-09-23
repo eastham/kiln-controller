@@ -164,6 +164,8 @@ class TFTDisplay(threading.Thread):
 
         try:
             # Fast clear using pre-created black image
+            log.info(f"clearing display")
+
             self.image.paste(self.black_image)
             log.info(f"display clear done")
 
@@ -178,16 +180,12 @@ class TFTDisplay(threading.Thread):
             log.info(f"display draw done")
 
             # Update display
-            log.info("Waiting for SPI lock for display update")
             with spi_lock():
-                log.info("SPI lock acquired, updating display")
                 self.disp.image(self.image)
             log.info("Display update completed")
 
         except Exception as e:
             log.error(f"Error updating TFT display: {e}")
-        log.info(f"display update done")
-
 
     def draw_normal_status(self):
         """Draw simplified status display with text"""
