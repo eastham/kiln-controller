@@ -189,21 +189,26 @@ class TFTDisplay(threading.Thread):
         time_width = time_bbox[2] - time_bbox[0]
         self.draw.text((self.draw_width - time_width - 5, 5), time_str, font=self.font_medium, fill=self.GREEN)
 
-        # Lower left: Current temperature
+        # Center area: Current temperature (large, centered)
         try:
             current_temp = self.oven.board.temp_sensor.temperature() + config.thermocouple_offset
         except:
             current_temp = None
         current_temp_str = self.format_temperature(current_temp)
-        self.draw.text((5, self.draw_height - 35), current_temp_str, font=self.font_large, fill=self.WHITE)
+        # Center current temp horizontally
+        current_bbox = self.draw.textbbox((0, 0), current_temp_str, font=self.font_large)
+        current_width = current_bbox[2] - current_bbox[0]
+        current_x = (self.draw_width - current_width) // 2
+        self.draw.text((current_x, 50), current_temp_str, font=self.font_large, fill=self.WHITE)
 
-        # Lower right: Target temperature
+        # Below current temp: Target temperature (centered)
         target_temp = getattr(self.oven, 'target', 0)
         target_temp_str = self.format_temperature(target_temp)
-        # Right-align target temp
-        target_bbox = self.draw.textbbox((0, 0), target_temp_str, font=self.font_large)
+        # Center target temp horizontally
+        target_bbox = self.draw.textbbox((0, 0), target_temp_str, font=self.font_medium)
         target_width = target_bbox[2] - target_bbox[0]
-        self.draw.text((self.draw_width - target_width - 5, self.draw_height - 35), target_temp_str, font=self.font_large, fill=self.YELLOW)
+        target_x = (self.draw_width - target_width) // 2
+        self.draw.text((target_x, 85), target_temp_str, font=self.font_medium, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""
