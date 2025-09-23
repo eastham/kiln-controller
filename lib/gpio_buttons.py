@@ -143,7 +143,6 @@ class ButtonManager(threading.Thread):
         self.init_buttons()
 
         # Delay to let TFT display thread start, then show default program
-        import threading
         threading.Timer(1.0, self.show_default_program).start()
 
     def show_default_program(self):
