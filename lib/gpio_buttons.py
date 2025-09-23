@@ -264,7 +264,7 @@ class ButtonManager(threading.Thread):
         if not self.in_selection_mode:
             log.info("Start button pressed but no program selected")
             if self.tft_display:
-                self.tft_display.show_message("No program selected", 3)
+                self.tft_display.show_message("No program", 3)
             return
 
         profile = self.profile_manager.get_current_profile()

@@ -169,7 +169,6 @@ class TFTDisplay(threading.Thread):
 
             raise ValueError("Profile data is empty or complete")
         except Exception as e:
-            log.info(f"Failed to get next profile target: {e}")
             # Fallback to current PID target
             return getattr(self.oven, 'target', 0)
 
@@ -219,9 +218,6 @@ class TFTDisplay(threading.Thread):
         # Fast clear using pre-created black image (much faster than drawing rectangle)
         self.image.paste(self.black_image)
 
-        # Debug: Add a test rectangle to confirm display is working
-        self.draw.rectangle((235, 130, 240, 135), fill=self.RED)
-
         # Upper left: Mode/State
         state = getattr(self.oven, 'state', 'IDLE')
         state_color = self.get_status_color()
@@ -242,7 +238,7 @@ class TFTDisplay(threading.Thread):
             current_temp = None
             log.warning(f"TFT display failed to read temperature: {e}")
         current_temp_str = self.format_temperature(current_temp)
-        self.draw.text((50, 35), current_temp_str, font=self.font_large, fill=self.WHITE)
+        self.draw.text((5, 35), current_temp_str, font=self.font_large, fill=self.WHITE)
 
         # Below: Target temperature and duty cycle
         # Show next profile target instead of current PID target
@@ -264,7 +260,7 @@ class TFTDisplay(threading.Thread):
 
         # Combine target temp and duty cycle
         target_display = target_temp_str + duty_cycle_str
-        self.draw.text((45, 85), target_display, font=self.font_medium, fill=self.YELLOW)
+        self.draw.text((5, 85), target_display, font=self.font_medium, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""
@@ -288,7 +284,7 @@ class TFTDisplay(threading.Thread):
         """Draw temporary message"""
         # Center the message
         message_lines = self.message_text.split('\n')
-        y_start = (self.draw_height - len(message_lines) * 20) // 2
+        y_start = (self.draw_height - len(message_lines) * 26) // 2
 
         for i, line in enumerate(message_lines):
             self.draw.text((5, y_start + i * 20), line, font=self.font_medium, fill=self.YELLOW)
