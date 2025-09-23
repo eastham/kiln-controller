@@ -380,6 +380,14 @@ def emergency_shutdown():
     except Exception as e:
         log.error(f"Failed to turn off heat during shutdown: {e}")
 
+    # Show emergency halt message on display
+    try:
+        if 'tft_display' in globals() and tft_display and tft_display.disp:
+            tft_display.show_message("EMERGENCY HALT\nProcess Stopped", 2)
+            time.sleep(2.5)  # Give time for message to display
+    except Exception as e:
+        log.error(f"Error showing emergency message: {e}")
+
     # Clean up display and buttons
     try:
         if 'tft_display' in globals() and tft_display:
