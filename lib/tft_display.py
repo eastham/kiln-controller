@@ -198,9 +198,14 @@ class TFTDisplay(threading.Thread):
 
             # Check for special display modes
             log.info(f"Display mode check: message_mode={self.message_mode}, selection_mode={self.selection_mode}, selected_profile={self.selected_profile is not None}")
-            if self.message_mode and time.time() < self.message_expire_time:
-                log.info("Drawing message mode")
+            current_time = time.time()
+            if self.message_mode and current_time < self.message_expire_time:
+                log.info(f"Drawing message mode (expires in {self.message_expire_time - current_time:.1f}s)")
                 self.draw_message()
+            elif self.message_mode:
+                log.info(f"Message mode but expired ({current_time - self.message_expire_time:.1f}s ago)")
+                # Clear message mode since it's expired
+                self.message_mode = False
             elif self.selection_mode and self.selected_profile:
                 log.info(f"Drawing program selection: {self.selected_profile['name'] if self.selected_profile else 'None'}")
                 self.draw_program_selection()
