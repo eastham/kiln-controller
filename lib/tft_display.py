@@ -188,6 +188,7 @@ class TFTDisplay(threading.Thread):
 
     def _do_update(self):
         """Internal method that actually performs the display update"""
+        log.info(f"_do_update() called - selection_mode={self.selection_mode}, message_mode={self.message_mode}")
         try:
             # Fast clear using pre-created black image
             log.info(f"clearing display")
@@ -298,9 +299,11 @@ class TFTDisplay(threading.Thread):
 
     def set_selection_mode(self, profile):
         """Enter program selection mode"""
+        log.info(f"Setting selection mode with profile: {profile['name'] if profile else 'None'}")
         self.selection_mode = True
         self.selected_profile = profile
         self.message_mode = False  # Clear any active message
+        log.info(f"Selection mode set: selection_mode={self.selection_mode}, selected_profile={self.selected_profile is not None}")
         self.force_update()  # Immediate update for button responsiveness
 
     def exit_selection_mode(self):
@@ -319,11 +322,14 @@ class TFTDisplay(threading.Thread):
 
     def force_update(self):
         """Force an immediate display update (called by button manager)"""
+        log.info(f"force_update() called - selection_mode={self.selection_mode}, disp={self.disp is not None}")
         if self.disp:
             try:
                 self._do_update()  # Bypass the selection mode check
             except Exception as e:
                 log.error(f"Error in forced display update: {e}")
+        else:
+            log.warning("force_update() skipped - no display")
 
     def start_display(self):
         """Start the display update thread"""
