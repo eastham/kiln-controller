@@ -226,10 +226,26 @@ class TFTDisplay(threading.Thread):
         current_temp_str = self.format_temperature(current_temp)
         self.draw.text((50, 35), current_temp_str, font=self.font_large, fill=self.WHITE)
 
-        # Below: Target temperature
+        # Below: Target temperature and duty cycle
         target_temp = getattr(self.oven, 'target', 0)
         target_temp_str = self.format_temperature(target_temp)
-        self.draw.text((85, 85), target_temp_str, font=self.font_medium, fill=self.YELLOW)
+
+        # Get duty cycle from PID output if available
+        duty_cycle_str = ""
+        try:
+            if hasattr(self.oven, 'pid') and hasattr(self.oven.pid, 'pidstats'):
+                duty_cycle = self.oven.pid.pidstats.get('out', 0) * 100  # Convert to percentage
+                duty_cycle_str = f" ({duty_cycle:.0f}%)"
+            elif hasattr(self.oven, 'heat'):
+                # Fallback to basic heat indicator
+                duty_cycle = getattr(self.oven, 'heat', 0) * 100
+                duty_cycle_str = f" ({duty_cycle:.0f}%)"
+        except Exception as e:
+            log.warning(f"Failed to read duty cycle: {e}")
+
+        # Combine target temp and duty cycle
+        target_display = target_temp_str + duty_cycle_str
+        self.draw.text((55, 85), target_display, font=self.font_medium, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""
@@ -239,7 +255,7 @@ class TFTDisplay(threading.Thread):
         name = profile['name']
         if len(name) > 18:
             name = name[:15] + "..."
-        self.draw.text((5, 25), name, font=self.font_medium, fill=self.YELLOW)
+        self.draw.text((5, 20), name, font=self.font_medium, fill=self.YELLOW)
 
         # Max temp and duration
         temp_unit = "°F" if config.temp_scale.lower() == "f" else "°C"
