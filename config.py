@@ -154,7 +154,7 @@ stop_integral_windup = True
 ########################################################################
 #
 #   Simulation parameters
-simulate = True
+simulate = False
 sim_t_env      = 65   # deg
 sim_c_heat     = 500.0  # J/K  heat capacity of heat element
 sim_c_oven     = 5000.0 # J/K  heat capacity of oven
@@ -288,7 +288,7 @@ enable_tft_display = False
 try:
     import board
     tft_cs_pin    = board.CE0    # TFT Chip Select (GPIO8/CE0)
-    tft_dc_pin    = board.D19    # TFT Data/Command
+    tft_dc_pin    = board.D25    # TFT Data/Command
     tft_reset_pin = board.D26    # TFT Reset
 except (NotImplementedError,AttributeError):
     print("TFT display pins not configured - probably running in simulation mode")
