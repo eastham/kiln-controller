@@ -89,9 +89,12 @@ class TFTDisplay(threading.Thread):
             self.image = Image.new("RGB", (self.draw_width, self.draw_height))
             self.draw = ImageDraw.Draw(self.image)
 
+            # Pre-create a black image for fast clearing
+            self.black_image = Image.new("RGB", (self.draw_width, self.draw_height), self.BLACK)
+
             # Load fonts
             try:
-                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 32)
+                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 50)
                 self.font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
                 self.font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
             except OSError:
@@ -179,8 +182,8 @@ class TFTDisplay(threading.Thread):
 
     def draw_normal_status(self):
         """Draw simplified status display with text"""
-        # Clear background
-        self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
+        # Fast clear using pre-created black image (much faster than drawing rectangle)
+        self.image.paste(self.black_image)
 
         # Debug: Add a test rectangle to confirm display is working
         self.draw.rectangle((235, 130, 240, 135), fill=self.RED)
@@ -215,13 +218,12 @@ class TFTDisplay(threading.Thread):
         profile = self.selected_profile
 
         # Title
-        self.draw.text((5, 5), "Selected Program:", font=self.font_small, fill=self.WHITE)
 
         # Program name (truncate if too long)
         name = profile['name']
         if len(name) > 18:
             name = name[:15] + "..."
-        self.draw.text((5, 25), name, font=self.font_medium, fill=self.YELLOW)
+        self.draw.text((5, 25), name, font=self.font_large, fill=self.YELLOW)
 
         # Max temp and duration
         temp_unit = "°F" if config.temp_scale.lower() == "f" else "°C"
