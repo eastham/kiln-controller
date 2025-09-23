@@ -83,17 +83,11 @@ class TFTDisplay(threading.Thread):
             self.image = Image.new("RGB", (self.draw_width, self.draw_height))
             self.draw = ImageDraw.Draw(self.image)
 
-            # Load fonts
-            try:
-                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
-                self.font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
-                self.font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
-            except OSError:
-                # Fallback to default font if DejaVu not available
-                self.font_large = ImageFont.load_default()
-                self.font_medium = ImageFont.load_default()
-                self.font_small = ImageFont.load_default()
-                log.warning("Could not load DejaVu fonts, using default font")
+            # Simple font loading - just use default fonts
+            self.font_large = ImageFont.load_default()
+            self.font_medium = ImageFont.load_default()
+            self.font_small = ImageFont.load_default()
+            log.info("Using default fonts for maximum compatibility")
 
             # Clear display
             self.clear_display()
@@ -174,9 +168,18 @@ class TFTDisplay(threading.Thread):
         # Clear background
         self.draw.rectangle((0, 0, self.draw_width, self.draw_height), fill=self.BLACK)
 
+        # Debug: Draw a simple test pattern first
+        log.debug("Drawing TFT display update")
+
+        # Test if fonts are working - draw a simple rectangle in corner
+        self.draw.rectangle((235, 130, 240, 135), fill=self.RED)  # Small red square in bottom right
+
         # Upper left: Mode/State
         state = getattr(self.oven, 'state', 'IDLE')
         state_color = self.get_status_color()
+        log.debug("Drawing state: {} with color: {}".format(state, state_color))
+        # Draw background rectangle for better visibility
+        self.draw.rectangle((2, 2, 60, 20), fill=self.BLACK, outline=state_color)
         self.draw.text((5, 5), state, font=self.font_medium, fill=state_color)
 
         # Upper right: Time left
@@ -184,10 +187,9 @@ class TFTDisplay(threading.Thread):
         runtime = getattr(self.oven, 'runtime', 0)
         time_remaining = max(0, total_time - runtime)
         time_str = self.format_time(time_remaining)
-        # Right-align by calculating text width
-        time_bbox = self.draw.textbbox((0, 0), time_str, font=self.font_medium)
-        time_width = time_bbox[2] - time_bbox[0]
-        self.draw.text((self.draw_width - time_width - 5, 5), time_str, font=self.font_medium, fill=self.GREEN)
+        # Simple right positioning
+        self.draw.rectangle((160, 2, 238, 20), fill=self.BLACK, outline=self.GREEN)
+        self.draw.text((165, 5), time_str, font=self.font_medium, fill=self.GREEN)
 
         # Center area: Current temperature (large, centered)
         try:
@@ -195,20 +197,16 @@ class TFTDisplay(threading.Thread):
         except:
             current_temp = None
         current_temp_str = self.format_temperature(current_temp)
-        # Center current temp horizontally
-        current_bbox = self.draw.textbbox((0, 0), current_temp_str, font=self.font_large)
-        current_width = current_bbox[2] - current_bbox[0]
-        current_x = (self.draw_width - current_width) // 2
-        self.draw.text((current_x, 50), current_temp_str, font=self.font_large, fill=self.WHITE)
+        # Simple centered positioning
+        self.draw.rectangle((80, 45, 160, 70), fill=self.BLACK, outline=self.WHITE)
+        self.draw.text((85, 50), current_temp_str, font=self.font_large, fill=self.WHITE)
 
         # Below current temp: Target temperature (centered)
         target_temp = getattr(self.oven, 'target', 0)
         target_temp_str = self.format_temperature(target_temp)
-        # Center target temp horizontally
-        target_bbox = self.draw.textbbox((0, 0), target_temp_str, font=self.font_medium)
-        target_width = target_bbox[2] - target_bbox[0]
-        target_x = (self.draw_width - target_width) // 2
-        self.draw.text((target_x, 85), target_temp_str, font=self.font_medium, fill=self.YELLOW)
+        # Simple centered positioning
+        self.draw.rectangle((80, 80, 160, 100), fill=self.BLACK, outline=self.YELLOW)
+        self.draw.text((85, 85), target_temp_str, font=self.font_medium, fill=self.YELLOW)
 
     def draw_program_selection(self):
         """Draw program selection display"""

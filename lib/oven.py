@@ -134,11 +134,6 @@ class TempSensorReal(TempSensor):
         else:
             import board
             self.spi = board.SPI()
-            while not self.spi.try_lock():
-                pass
-            self.spi.configure(baudrate=100000, polarity=1, phase=1)
-            self.spi.unlock()
-
             log.info("Hardware SPI selected for reading thermocouple")
 
     def get_temperature(self):
@@ -226,6 +221,16 @@ class Max31855(TempSensorReal):
         self.thermocouple = adafruit_max31855.MAX31855(self.spi, self.cs)
 
     def raw_temp(self):
+        try:
+            with spi_lock():
+                return self.thermocouple.temperature_NIST
+        except RuntimeError as rte:
+            if rte.args and rte.args[0]:
+                raise Max31855_Error(rte.args[0])
+            raise Max31855_Error('unknown')
+
+    def temperature(self):
+        """SPI-locked temperature reading for external access"""
         try:
             with spi_lock():
                 return self.thermocouple.temperature_NIST
@@ -324,6 +329,15 @@ class Max31856(TempSensorReal):
         # dict named self.thermocouple.fault. Here we check that
         # dict for errors and raise an exception.
         # and raise Max31856_Error(message)
+        with spi_lock():
+            temp = self.thermocouple.temperature
+            for k,v in self.thermocouple.fault.items():
+                if v:
+                    raise Max31856_Error(k)
+            return temp
+
+    def temperature(self):
+        """SPI-locked temperature reading for external access"""
         with spi_lock():
             temp = self.thermocouple.temperature
             for k,v in self.thermocouple.fault.items():

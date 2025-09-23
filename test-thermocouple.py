@@ -6,6 +6,12 @@ import datetime
 import busio
 import adafruit_bitbangio as bitbangio
 
+# Add lib directory to path
+import os, sys
+script_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, script_dir + '/lib/')
+from spi_utils import spi_lock
+
 try:
     import board
 except NotImplementedError:
@@ -64,7 +70,8 @@ temp = 0
 while(True):
     time.sleep(1)
     try:
-        temp = sensor.temperature
+        with spi_lock():
+            temp = sensor.temperature
         scale = "C"
         if config.temp_scale == "f":
             temp = temp * (9/5) + 32 
