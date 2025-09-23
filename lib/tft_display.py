@@ -69,7 +69,7 @@ class TFTDisplay(threading.Thread):
                 cs=cs_pin,
                 dc=dc_pin,
                 rst=reset_pin,
-                baudrate=4000000   # Slower speed for more reliable operation
+                baudrate=8000000   # Faster speed for better responsiveness
             )
 
             # Add initialization delay and explicit reset

@@ -151,11 +151,16 @@ class ButtonManager(threading.Thread):
             self.profile_manager.get_profile_count() > 0):
 
             profile = self.profile_manager.get_current_profile()
-            if profile and self.tft_display:
-                log.info(f"Showing default program message: {profile['name']}")
-                # Show as a temporary message instead of entering selection mode
-                message = f"Default: {profile['name']}\nPress button to cycle"
-                self.tft_display.show_message(message, 5)  # Show for 5 seconds
+            if profile:
+                log.info(f"Setting default program: {profile['name']}")
+                # Enter selection mode so the start button works
+                self.in_selection_mode = True
+                self.last_selection_activity = time.time()
+
+                if self.tft_display:
+                    # Show as a temporary message for 5 seconds, then show normal temp display
+                    message = f"Default: {profile['name']}\nReady to start"
+                    self.tft_display.show_message(message, 5)  # Show for 5 seconds
 
     def init_buttons(self):
         """Initialize GPIO buttons"""
