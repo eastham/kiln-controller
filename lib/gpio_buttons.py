@@ -291,21 +291,19 @@ class ButtonManager(threading.Thread):
         success = self.send_api_command("stop")
 
         if success:
-            # Keep the current program selected after stopping
-            # This allows immediate restart with the same program
+            # Keep the current program selected internally for easy restart
+            # but show normal status display instead of selection screen
             current_profile = self.profile_manager.get_current_profile()
             if current_profile:
-                log.info(f"Maintaining program selection: {current_profile['name']}")
+                log.info(f"Maintaining program selection internally: {current_profile['name']}")
                 self.in_selection_mode = True
                 self.last_selection_activity = time.time()
-                # Update display to show program selection
-                if self.tft_display:
-                    self.tft_display.set_selection_mode(current_profile)
             else:
-                # No program selected, exit selection mode
                 self.in_selection_mode = False
-                if self.tft_display:
-                    self.tft_display.exit_selection_mode()
+
+            # Always show normal status display after stopping
+            if self.tft_display:
+                self.tft_display.exit_selection_mode()
 
     def check_selection_timeout(self):
         """Check if selection mode should timeout"""
