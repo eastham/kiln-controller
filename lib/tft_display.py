@@ -156,6 +156,23 @@ class TFTDisplay(threading.Thread):
         else:
             return self.RED
 
+    def get_next_profile_target(self):
+        """Get the next target temperature from the firing profile"""
+        try:
+            runtime = getattr(self.oven, 'runtime', 0)
+            profile_data = self.oven.profile.data
+
+            # Find the next data point in the profile
+            for time_point, temp_point in profile_data:
+                if time_point > runtime:
+                    return temp_point
+
+            raise ValueError("Profile data is empty or complete")
+        except Exception as e:
+            log.info(f"Failed to get next profile target: {e}")
+            # Fallback to current PID target
+            return getattr(self.oven, 'target', 0)
+
 
     def update_display(self):
         """Update the display with current kiln status"""
@@ -227,7 +244,8 @@ class TFTDisplay(threading.Thread):
         self.draw.text((50, 35), current_temp_str, font=self.font_large, fill=self.WHITE)
 
         # Below: Target temperature and duty cycle
-        target_temp = getattr(self.oven, 'target', 0)
+        # Show next profile target instead of current PID target
+        target_temp = self.get_next_profile_target()
         target_temp_str = self.format_temperature(target_temp)
 
         # Get duty cycle from PID output if available
