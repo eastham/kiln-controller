@@ -46,7 +46,10 @@ else:
     log.info("this is a real kiln")
     oven = RealOven()
 
-# SPI lock is now available globally via spi_utils
+# Initialize SPI lock for coordinating between thermocouple and display
+from lib.spi_utils import init_spi_lock
+init_spi_lock()
+
 ovenWatcher = OvenWatcher(oven)
 # this ovenwatcher is used in the oven class for restarts
 oven.set_ovenwatcher(ovenWatcher)
