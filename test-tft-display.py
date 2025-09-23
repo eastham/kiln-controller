@@ -16,7 +16,6 @@ sys.path.insert(0, script_dir + '/lib/')
 
 # Import config and create a mock oven for testing
 import config
-from spi_utils import init_spi_lock, is_spi_lock_initialized
 
 logging.basicConfig(level=config.log_level, format=config.log_format)
 log = logging.getLogger("tft-test")
@@ -52,9 +51,6 @@ class MockOven:
 def main():
     log.info("Testing TFT Display functionality")
 
-    # Initialize SPI lock first
-    init_spi_lock()
-    log.info(f"SPI lock initialized: {is_spi_lock_initialized()}")
 
     # Enable TFT display for testing
     config.enable_tft_display = True
@@ -77,16 +73,14 @@ def main():
         # Do a simple test draw - fill screen with red
         log.info("Drawing simple red screen test...")
         tft_display.draw.rectangle((0, 0, 240, 135), fill=(255, 0, 0))
-        with spi_lock():
-            tft_display.disp.image(tft_display.image)
+        tft_display.disp.image(tft_display.image)
 
         time.sleep(2)
 
         # Clear to black
         log.info("Clearing to black...")
         tft_display.draw.rectangle((0, 0, 240, 135), fill=(0, 0, 0))
-        with spi_lock():
-            tft_display.disp.image(tft_display.image)
+        tft_display.disp.image(tft_display.image)
 
         time.sleep(2)
 
