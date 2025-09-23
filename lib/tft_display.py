@@ -163,6 +163,7 @@ class TFTDisplay(threading.Thread):
         try:
             # Fast clear using pre-created black image
             self.image.paste(self.black_image)
+            log.info(f"display clear done")
 
             # Check for special display modes
             if self.message_mode and time.time() < self.message_expire_time:
@@ -172,6 +173,7 @@ class TFTDisplay(threading.Thread):
             else:
                 # Normal kiln status display
                 self.draw_normal_status()
+            log.info(f"display draw done")
 
             # Update display
             with spi_lock():
@@ -296,7 +298,7 @@ class TFTDisplay(threading.Thread):
         while self.running:
             try:
                 self.update_display()
-                time.sleep(0.5)  # Update every 0.5 seconds for more responsive display
+                time.sleep(5)  # Update every 0.5 seconds for more responsive display
             except Exception as e:
                 log.error(f"Error in TFT display loop: {e}")
                 time.sleep(2)  # Wait longer on error
