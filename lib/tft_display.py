@@ -200,20 +200,25 @@ class TFTDisplay(threading.Thread):
             # Check for special display modes
             log.info(f"Display mode check: message_mode={self.message_mode}, selection_mode={self.selection_mode}, selected_profile={self.selected_profile is not None}")
             current_time = time.time()
+
+            # Check if message mode is active and not expired
             if self.message_mode and current_time < self.message_expire_time:
                 log.info(f"Drawing message mode (expires in {self.message_expire_time - current_time:.1f}s)")
                 self.draw_message()
-            elif self.message_mode:
-                log.info(f"Message mode but expired ({current_time - self.message_expire_time:.1f}s ago)")
-                # Clear message mode since it's expired
-                self.message_mode = False
-            elif self.selection_mode and self.selected_profile:
-                log.info(f"Drawing program selection: {self.selected_profile['name'] if self.selected_profile else 'None'}")
-                self.draw_program_selection()
             else:
-                log.info("Drawing normal status")
-                # Normal kiln status display
-                self.draw_normal_status()
+                # Clear expired message mode
+                if self.message_mode:
+                    log.info(f"Message mode expired ({current_time - self.message_expire_time:.1f}s ago), clearing")
+                    self.message_mode = False
+
+                # Now check other display modes
+                if self.selection_mode and self.selected_profile:
+                    log.info(f"Drawing program selection: {self.selected_profile['name'] if self.selected_profile else 'None'}")
+                    self.draw_program_selection()
+                else:
+                    log.info("Drawing normal status")
+                    # Normal kiln status display
+                    self.draw_normal_status()
             log.info(f"display draw done")
 
             # Update display
