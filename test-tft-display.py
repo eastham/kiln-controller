@@ -17,6 +17,12 @@ sys.path.insert(0, script_dir + '/lib/')
 # Import config and create a mock oven for testing
 import config
 
+# Initialize SPI lock for testing
+import sys
+sys.path.insert(0, script_dir + '/lib/')
+from spi_utils import init_spi_lock
+init_spi_lock()
+
 logging.basicConfig(level=config.log_level, format=config.log_format)
 log = logging.getLogger("tft-test")
 

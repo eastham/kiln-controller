@@ -176,8 +176,11 @@ class TFTDisplay(threading.Thread):
             log.info(f"display draw done")
 
             # Update display
+            log.info("Waiting for SPI lock for display update")
             with spi_lock():
+                log.info("SPI lock acquired, updating display")
                 self.disp.image(self.image)
+            log.info("Display update completed")
 
         except Exception as e:
             log.error(f"Error updating TFT display: {e}")
