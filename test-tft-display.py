@@ -26,11 +26,11 @@ class MockProfile:
 
 class MockTempSensor:
     def __init__(self):
-        self.temp = 75.0 if config.temp_scale.lower() == "f" else 23.9
+        self.temp = 75 if config.temp_scale.lower() == "f" else 24
 
     def temperature(self):
         # Simulate slowly rising temperature
-        self.temp += 0.5
+        self.temp += 1
         return self.temp
 
 class MockBoard:
