@@ -134,6 +134,7 @@ class TempSensorReal(TempSensor):
         else:
             import board
             self.spi = board.SPI()
+            #self.spi.configure(baudrate=100000, polarity=1, phase=1)
             log.info("Hardware SPI selected for reading thermocouple")
 
     def get_temperature(self):
