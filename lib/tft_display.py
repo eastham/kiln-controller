@@ -91,7 +91,7 @@ class TFTDisplay(threading.Thread):
 
             # Load fonts
             try:
-                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 28)
+                self.font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 32)
                 self.font_medium = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 20)
                 self.font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
             except OSError:
@@ -245,11 +245,13 @@ class TFTDisplay(threading.Thread):
         self.selection_mode = True
         self.selected_profile = profile
         self.message_mode = False  # Clear any active message
+        self.force_update()  # Immediate update for button responsiveness
 
     def exit_selection_mode(self):
         """Exit program selection mode"""
         self.selection_mode = False
         self.selected_profile = None
+        self.force_update()  # Immediate update for button responsiveness
 
     def show_message(self, message, duration_seconds):
         """Show temporary message"""
@@ -257,6 +259,15 @@ class TFTDisplay(threading.Thread):
         self.message_text = message
         self.message_expire_time = time.time() + duration_seconds
         self.selection_mode = False  # Clear selection mode
+        self.force_update()  # Immediate update for button responsiveness
+
+    def force_update(self):
+        """Force an immediate display update (called by button manager)"""
+        if self.disp and self.running:
+            try:
+                self.update_display()
+            except Exception as e:
+                log.error(f"Error in forced display update: {e}")
 
     def start_display(self):
         """Start the display update thread"""
@@ -283,10 +294,10 @@ class TFTDisplay(threading.Thread):
         while self.running:
             try:
                 self.update_display()
-                time.sleep(2)  # Update every 2 seconds to match sensor_time_wait
+                time.sleep(0.5)  # Update every 0.5 seconds for more responsive display
             except Exception as e:
                 log.error(f"Error in TFT display loop: {e}")
-                time.sleep(5)  # Wait longer on error
+                time.sleep(2)  # Wait longer on error
 
         log.info("TFT Display update loop stopped")
 
