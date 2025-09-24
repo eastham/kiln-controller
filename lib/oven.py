@@ -225,7 +225,8 @@ class Max31855(TempSensorReal):
         TempSensorReal.__init__(self)
         log.info("thermocouple MAX31855")
         import adafruit_max31855
-        self.thermocouple = adafruit_max31855.MAX31855(self.spi, self.cs)
+        with spi_lock():
+            self.thermocouple = adafruit_max31855.MAX31855(self.spi, self.cs)
 
     def raw_temp(self):
         try:
@@ -323,8 +324,9 @@ class Max31856(TempSensorReal):
         TempSensorReal.__init__(self)
         log.info("thermocouple MAX31856")
         import adafruit_max31856
-        self.thermocouple = adafruit_max31856.MAX31856(self.spi,self.cs,
-                                        thermocouple_type=config.thermocouple_type)
+        with spi_lock():
+            self.thermocouple = adafruit_max31856.MAX31856(self.spi,self.cs,
+                                            thermocouple_type=config.thermocouple_type)
         if (config.ac_freq_50hz == True):
             self.thermocouple.noise_rejection = 50
         else:
