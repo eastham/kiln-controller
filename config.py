@@ -184,7 +184,7 @@ time_scale_profile  = "m" # s = Seconds | m = Minutes | h = Hours - Enter and vi
 # naturally cool off. If your SSR has failed/shorted/closed circuit, this
 # means your kiln receives full power until your house burns down.
 # this should not replace you watching your kiln or use of a kiln-sitter
-emergency_shutoff_temp = 2264 #cone 7
+emergency_shutoff_temp = 1250 #cone 7
 
 # If the current temperature is outside the pid control window,
 # delay the schedule until it does back inside. This allows for heating
@@ -198,7 +198,7 @@ kiln_must_catch_up = True
 # or 100% off because the kiln is too hot. No integral builds up
 # outside the window. The bigger you make the window, the more
 # integral you will accumulate. This should be a positive integer.
-pid_control_window = 5 #degrees
+pid_control_window = 50 #degrees
 
 # thermocouple offset
 # If you put your thermocouple in ice water and it reads 36F, you can
