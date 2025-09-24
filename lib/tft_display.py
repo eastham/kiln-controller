@@ -152,9 +152,9 @@ class TFTDisplay(threading.Thread):
         elif state == "PAUSED":
             return self.YELLOW
         elif state == "IDLE":
-            return self.GRAY
-        else:
             return self.RED
+        else:
+            return self.GRAY
 
     def get_next_profile_target(self):
         """Get the next target temperature from the firing profile"""
@@ -303,12 +303,13 @@ class TFTDisplay(threading.Thread):
         self.message_mode = False  # Clear any active messages too
         self.force_update()  # Immediate update for button responsiveness
 
-    def show_message(self, message, duration_seconds):
+    def show_message(self, message, duration_seconds, clear_selection=True):
         """Show temporary message"""
         self.message_mode = True
         self.message_text = message
         self.message_expire_time = time.time() + duration_seconds
-        self.selection_mode = False  # Clear selection mode
+        if clear_selection:
+            self.selection_mode = False  # Clear selection mode
         self.force_update()  # Immediate update for button responsiveness
 
     def force_update(self):

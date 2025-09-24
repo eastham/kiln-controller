@@ -155,8 +155,9 @@ class ButtonManager(threading.Thread):
 
                 if self.tft_display:
                     # Show as a temporary message for 5 seconds, then show normal temp display
+                    # Don't clear selection mode so start button continues to work
                     message = f"Default: {profile['name']}\nReady to start"
-                    self.tft_display.show_message(message, 5)  # Show for 5 seconds
+                    self.tft_display.show_message(message, 5, clear_selection=False)
 
     def init_buttons(self):
         """Initialize GPIO buttons with debouncing"""
