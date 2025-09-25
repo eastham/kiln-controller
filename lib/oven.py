@@ -39,20 +39,31 @@ class Output(object):
         config.gpio_heat
         config.gpio_heat_invert
     '''
-    def __init__(self):
+    def __init__(self, tft_display=None):
         self.active = False
-        self.heater = digitalio.DigitalInOut(config.gpio_heat) 
-        self.heater.direction = digitalio.Direction.OUTPUT 
+        self.heater = digitalio.DigitalInOut(config.gpio_heat)
+        self.heater.direction = digitalio.Direction.OUTPUT
         self.off = config.gpio_heat_invert
         self.on = not self.off
+        self.tft_display = tft_display
+
+    def set_tft_display(self, tft_display):
+        """Set TFT display reference for immediate heating indicator updates"""
+        self.tft_display = tft_display
 
     def heat(self,sleepfor):
         self.heater.value = self.on
+        # Update heating indicator immediately
+        if self.tft_display:
+            self.tft_display.update_heating_indicator(True)
         time.sleep(sleepfor)
 
     def cool(self,sleepfor):
         '''no active cooling, so sleep'''
         self.heater.value = self.off
+        # Update heating indicator immediately
+        if self.tft_display:
+            self.tft_display.update_heating_indicator(False)
         time.sleep(sleepfor)
 
 # wrapper for blinka board
@@ -133,9 +144,10 @@ class TempSensorReal(TempSensor):
             log.info("Software SPI selected for reading thermocouple")
         else:
             import board
-            self.spi = board.SPI()
-            #self.spi.configure(baudrate=100000, polarity=1, phase=1) q
-            log.info("Hardware SPI selected for reading thermocouple")
+            with spi_lock():
+                self.spi = board.SPI()
+                #self.spi.configure(baudrate=100000, polarity=1, phase=1) q
+                log.info("Hardware SPI selected for reading thermocouple")
 
     def get_temperature(self):
         '''read temp from tc and convert if needed'''
@@ -586,6 +598,11 @@ class Oven(threading.Thread):
     def set_ovenwatcher(self,watcher):
         log.info("ovenwatcher set in oven class")
         self.ovenwatcher = watcher
+
+    def set_tft_display(self, tft_display):
+        """Set TFT display reference for immediate heating updates"""
+        if hasattr(self, 'output') and self.output:
+            self.output.set_tft_display(tft_display)
 
     def run(self):
         while True:

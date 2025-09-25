@@ -54,6 +54,8 @@ oven.set_ovenwatcher(ovenWatcher)
 tft_display = create_tft_display(oven)
 if tft_display:
     tft_display.start_display()
+    # Connect oven to TFT display for immediate heating indicator updates
+    oven.set_tft_display(tft_display)
     log.info("TFT display enabled and started")
 else:
     tft_display = None

@@ -143,16 +143,13 @@ class TFTDisplay(threading.Thread):
 
     def get_status_color(self):
         """Get status color based on kiln state"""
-        if not hasattr(self.oven, 'state'):
-            return self.GRAY
-
         state = self.oven.state
         if state == "RUNNING":
-            return self.GREEN
+            return self.RED
         elif state == "PAUSED":
             return self.YELLOW
         elif state == "IDLE":
-            return self.RED
+            return self.GREEN
         else:
             return self.GRAY
 
@@ -248,12 +245,21 @@ class TFTDisplay(threading.Thread):
         # Get duty cycle from PID output if available
         duty_cycle_str = ""
         try:
-            if hasattr(self.oven, 'pid') and hasattr(self.oven.pid, 'pidstats'):
-                duty_cycle = self.oven.pid.pidstats.get('out', 0) * 100  # Convert to percentage
-                duty_cycle_str = f" ({duty_cycle:.0f}%)"
-            elif hasattr(self.oven, 'heat'):
-                # Fallback to basic heat indicator
-                duty_cycle = getattr(self.oven, 'heat', 0) * 100
+            duty_cycle = 0
+
+            # Try PID output first
+            pid_out = self.oven.pid.pidstats.get('out', 0)
+            if pid_out > 0:
+                duty_cycle = pid_out * 100
+
+            # If PID shows 0%, check the heat indicator as fallback
+            # This handles cases where PID stats are stale or not updated
+            if duty_cycle == 0:
+                heat_value = self.oven.heat
+                if heat_value > 0:
+                    duty_cycle = heat_value * 100
+
+            if duty_cycle > 0:
                 duty_cycle_str = f" ({duty_cycle:.0f}%)"
         except Exception as e:
             log.warning(f"Failed to read duty cycle: {e}")
@@ -261,6 +267,25 @@ class TFTDisplay(threading.Thread):
         # Combine target temp and duty cycle
         target_display = target_temp_str + duty_cycle_str
         self.draw.text((5, 85), target_display, font=self.font_medium, fill=self.YELLOW)
+
+    def update_heating_indicator(self, heating_on):
+        """Update just the heating indicator rectangle immediately"""
+        if not self.disp:
+            return
+
+        try:
+            # Clear the indicator area (10x15 pixel rectangle)
+            self.draw.rectangle((230, 120, 240, 135), fill=self.BLACK)
+
+            # Draw red rectangle if heating
+            if heating_on:
+                self.draw.rectangle((230, 120, 240, 135), fill=self.RED)
+
+            # Update just this area of the display
+            with spi_lock():
+                self.disp.image(self.image)
+        except Exception as e:
+            log.error(f"Error updating heating indicator: {e}")
 
     def draw_program_selection(self):
         """Draw program selection display"""
