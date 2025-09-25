@@ -268,6 +268,18 @@ class TFTDisplay(threading.Thread):
         target_display = target_temp_str + duty_cycle_str
         self.draw.text((5, 85), target_display, font=self.font_medium, fill=self.YELLOW)
 
+        # Redraw heating indicator (gets overwritten by the black image clear)
+        self._draw_heating_indicator()
+
+    def _draw_heating_indicator(self):
+        """Draw heating indicator based on current oven heat state"""
+        try:
+            heating_on = self.oven.heat > 0
+            if heating_on:
+                self.draw.rectangle((230, 120, 240, 135), fill=self.RED)
+        except Exception:
+            pass  # Ignore errors reading heat status
+
     def update_heating_indicator(self, heating_on):
         """Update just the heating indicator rectangle immediately"""
         if not self.disp:
@@ -279,7 +291,7 @@ class TFTDisplay(threading.Thread):
 
             # Draw red rectangle if heating
             if heating_on:
-                self.draw.rectangle((230, 120, 240, 135), fill=self.RED)
+                self._draw_heating_indicator()
 
             # Update just this area of the display
             with spi_lock():
