@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 import adafruit_rgb_display.st7789 as st7789
 import config
 from spi_utils import spi_lock
+from watchdog import update_watchdog, register_thread, unregister_thread
 
 log = logging.getLogger(__name__)
 
@@ -379,14 +380,22 @@ class TFTDisplay(threading.Thread):
         """Main display update loop"""
         log.info("TFT Display update loop started")
 
+        # Register with watchdog
+        register_thread("TFTDisplay", "TFT display update thread")
+
         while self.running:
             try:
+                # Update watchdog timestamp
+                update_watchdog()
+
                 self.update_display()
                 time.sleep(5)
             except Exception as e:
                 log.error(f"Error in TFT display loop: {e}")
                 time.sleep(2)  # Wait longer on error
 
+        # Unregister from watchdog
+        unregister_thread("TFTDisplay")
         log.info("TFT Display update loop stopped")
 
 

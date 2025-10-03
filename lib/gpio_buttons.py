@@ -17,6 +17,7 @@ import requests
 import digitalio
 import config
 from adafruit_debouncer import Debouncer
+from watchdog import update_watchdog, register_thread, unregister_thread
 
 log = logging.getLogger(__name__)
 
@@ -322,8 +323,14 @@ class ButtonManager(threading.Thread):
         """Main button monitoring loop"""
         log.info("Button manager thread started")
 
+        # Register with watchdog
+        register_thread("ButtonManager", "GPIO button monitoring thread")
+
         while self.running:
             try:
+                # Update watchdog timestamp
+                update_watchdog()
+
                 # Update button debouncers
                 self.update_buttons()
 
@@ -344,6 +351,8 @@ class ButtonManager(threading.Thread):
                 log.error(f"Error in button manager loop: {e}")
                 time.sleep(1)  # Wait longer on error
 
+        # Unregister from watchdog
+        unregister_thread("ButtonManager")
         log.info("Button manager thread stopped")
 
 def create_button_manager(oven, tft_display=None):

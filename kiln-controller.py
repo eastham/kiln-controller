@@ -32,6 +32,7 @@ from ovenWatcher import OvenWatcher
 from tft_display import create_tft_display
 from gpio_buttons import create_button_manager
 from spi_utils import init_spi_lock
+from watchdog import init_watchdog, start_watchdog, stop_watchdog
 
 # Initialize shared SPI lock to prevent simultaneous access between
 # thermocouple and TFT display
@@ -49,6 +50,11 @@ else:
 ovenWatcher = OvenWatcher(oven)
 # this ovenwatcher is used in the oven class for restarts
 oven.set_ovenwatcher(ovenWatcher)
+
+# Initialize watchdog for safety monitoring
+watchdog = init_watchdog(oven)
+start_watchdog()
+log.info("Safety watchdog started - monitoring critical threads")
 
 # Initialize TFT display if enabled
 tft_display = create_tft_display(oven)
@@ -385,6 +391,13 @@ def emergency_shutdown():
             time.sleep(2.5)  # Give time for message to display
     except Exception as e:
         log.error(f"Error showing emergency message: {e}")
+
+    # Stop watchdog
+    try:
+        stop_watchdog()
+        log.info("Watchdog stopped")
+    except Exception as e:
+        log.error(f"Error stopping watchdog: {e}")
 
     # Clean up display and buttons
     try:

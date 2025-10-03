@@ -10,6 +10,7 @@ import busio
 import adafruit_bitbangio as bitbangio
 import statistics
 from spi_utils import spi_lock
+from watchdog import update_watchdog, register_thread, unregister_thread
 
 log = logging.getLogger(__name__)
 
@@ -171,11 +172,21 @@ class TempSensorReal(TempSensor):
         return self.temptracker.get_avg_temp()
 
     def run(self):
+        # Register with watchdog
+        register_thread("TempSensor", "Temperature sensor reading thread")
+
         while True:
-            temp = self.get_temperature()
-            if temp:
-                self.temptracker.add(temp)
-            time.sleep(self.sleeptime)
+            try:
+                # Update watchdog timestamp
+                update_watchdog()
+
+                temp = self.get_temperature()
+                if temp:
+                    self.temptracker.add(temp)
+                time.sleep(self.sleeptime)
+            except Exception as e:
+                log.error(f"Error in temperature sensor loop: {e}")
+                time.sleep(self.sleeptime)  # Wait before retrying
 
 class TempTracker(object):
     '''creates a sliding window of N temperatures per
@@ -605,30 +616,40 @@ class Oven(threading.Thread):
             self.output.set_tft_display(tft_display)
 
     def run(self):
+        # Register with watchdog
+        register_thread("OvenController", "Main oven control thread")
+
         while True:
-            log.debug('Oven running on ' + threading.current_thread().name)
-            if self.state == "IDLE":
-                if self.should_i_automatic_restart() == True:
-                    self.automatic_restart()
-                time.sleep(1)
-                continue
-            if self.state == "PAUSED":
-                self.start_time = self.get_start_time()
-                self.update_runtime()
-                self.update_target_temp()
-                self.heat_then_cool()
-                self.reset_if_emergency()
-                self.reset_if_schedule_ended()
-                continue
-            if self.state == "RUNNING":
-                self.update_cost()
-                self.save_automatic_restart_state()
-                self.kiln_must_catch_up()
-                self.update_runtime()
-                self.update_target_temp()
-                self.heat_then_cool()
-                self.reset_if_emergency()
-                self.reset_if_schedule_ended()
+            try:
+                # Update watchdog timestamp
+                update_watchdog()
+
+                log.debug('Oven running on ' + threading.current_thread().name)
+                if self.state == "IDLE":
+                    if self.should_i_automatic_restart() == True:
+                        self.automatic_restart()
+                    time.sleep(1)
+                    continue
+                if self.state == "PAUSED":
+                    self.start_time = self.get_start_time()
+                    self.update_runtime()
+                    self.update_target_temp()
+                    self.heat_then_cool()
+                    self.reset_if_emergency()
+                    self.reset_if_schedule_ended()
+                    continue
+                if self.state == "RUNNING":
+                    self.update_cost()
+                    self.save_automatic_restart_state()
+                    self.kiln_must_catch_up()
+                    self.update_runtime()
+                    self.update_target_temp()
+                    self.heat_then_cool()
+                    self.reset_if_emergency()
+                    self.reset_if_schedule_ended()
+            except Exception as e:
+                log.error(f"Error in oven control loop: {e}")
+                time.sleep(1)  # Wait before retrying
 
 class SimulatedOven(Oven):
 
