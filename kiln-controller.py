@@ -51,6 +51,13 @@ ovenWatcher = OvenWatcher(oven)
 # this ovenwatcher is used in the oven class for restarts
 oven.set_ovenwatcher(ovenWatcher)
 
+# SAFETY: Ensure heat is off at startup (important after watchdog reboots)
+try:
+    oven.abort_run()
+    log.info("Startup safety check: heat turned off")
+except Exception as e:
+    log.error(f"Failed to turn off heat at startup: {e}")
+
 # Initialize watchdog for safety monitoring
 watchdog = init_watchdog(oven)
 start_watchdog()
