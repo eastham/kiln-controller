@@ -146,8 +146,16 @@ class TempSensorReal(TempSensor):
         else:
             import board
             with spi_lock():
+                # Deinitialize any existing SPI bus to clear potential hung state
+                try:
+                    spi_bus = board.SPI()
+                    spi_bus.deinit()
+                    log.info("Deinitialized existing SPI bus")
+                except Exception as e:
+                    log.debug(f"SPI deinit failed (may not exist): {e}")
+
+                # Reinitialize SPI bus with fresh state
                 self.spi = board.SPI()
-                #self.spi.configure(baudrate=100000, polarity=1, phase=1) q
                 log.info("Hardware SPI selected for reading thermocouple")
 
     def get_temperature(self):
@@ -347,9 +355,32 @@ class Max31856(TempSensorReal):
         TempSensorReal.__init__(self)
         log.info("thermocouple MAX31856")
         import adafruit_max31856
-        with spi_lock():
-            self.thermocouple = adafruit_max31856.MAX31856(self.spi,self.cs,
-                                            thermocouple_type=config.thermocouple_type)
+
+        # Initialize with retry to handle SPI bus hang at first boot
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                with spi_lock():
+                    self.thermocouple = adafruit_max31856.MAX31856(self.spi,self.cs,
+                                                    thermocouple_type=config.thermocouple_type)
+                log.info(f"MAX31856 initialized successfully on attempt {attempt + 1}")
+                break
+            except Exception as e:
+                log.warning(f"MAX31856 init attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    # Reset SPI bus before retry
+                    time.sleep(0.5)
+                    try:
+                        self.spi.deinit()
+                        time.sleep(0.1)
+                        import board
+                        self.spi = board.SPI()
+                        log.info("SPI bus reset for retry")
+                    except Exception as reset_err:
+                        log.warning(f"SPI reset failed: {reset_err}")
+                else:
+                    raise
+
         if (config.ac_freq_50hz == True):
             self.thermocouple.noise_rejection = 50
         else:
