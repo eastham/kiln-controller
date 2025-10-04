@@ -193,8 +193,9 @@ def unregister_thread(thread_name):
     if _watchdog:
         _watchdog.unregister_thread(thread_name)
 
-def update_watchdog():
+def update_watchdog(thread_name=None):
     """Update timestamp for current thread (call this regularly from monitored threads)"""
     if _watchdog:
-        thread_name = threading.current_thread().name
+        if thread_name is None:
+            thread_name = threading.current_thread().name
         _watchdog.update_thread_timestamp(thread_name)

@@ -329,7 +329,7 @@ class ButtonManager(threading.Thread):
         while self.running:
             try:
                 # Update watchdog timestamp
-                update_watchdog()
+                update_watchdog("ButtonManager")
 
                 # Update button debouncers
                 self.update_buttons()

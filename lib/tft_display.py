@@ -386,7 +386,7 @@ class TFTDisplay(threading.Thread):
         while self.running:
             try:
                 # Update watchdog timestamp
-                update_watchdog()
+                update_watchdog("TFTDisplay")
 
                 self.update_display()
                 time.sleep(5)

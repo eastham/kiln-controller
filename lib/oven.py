@@ -178,7 +178,7 @@ class TempSensorReal(TempSensor):
         while True:
             try:
                 # Update watchdog timestamp
-                update_watchdog()
+                update_watchdog("TempSensor")
 
                 temp = self.get_temperature()
                 if temp:
@@ -622,7 +622,7 @@ class Oven(threading.Thread):
         while True:
             try:
                 # Update watchdog timestamp
-                update_watchdog()
+                update_watchdog("OvenController")
 
                 log.debug('Oven running on ' + threading.current_thread().name)
                 if self.state == "IDLE":
