@@ -389,7 +389,7 @@ class TFTDisplay(threading.Thread):
                 update_watchdog("TFTDisplay")
 
                 self.update_display()
-                time.sleep(5)
+                time.sleep(1)
             except Exception as e:
                 log.error(f"Error in TFT display loop: {e}")
                 time.sleep(2)  # Wait longer on error
