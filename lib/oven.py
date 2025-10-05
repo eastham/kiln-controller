@@ -256,17 +256,61 @@ class Max31855(TempSensorReal):
         TempSensorReal.__init__(self)
         log.info("thermocouple MAX31855")
         import adafruit_max31855
-        with spi_lock():
-            self.thermocouple = adafruit_max31855.MAX31855(self.spi, self.cs)
+
+        # Initialize with retry to handle SPI bus hang at first boot
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                with spi_lock():
+                    self.thermocouple = adafruit_max31855.MAX31855(self.spi, self.cs)
+                log.info(f"MAX31855 initialized successfully on attempt {attempt + 1}")
+                break
+            except Exception as e:
+                log.warning(f"MAX31855 init attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    # Reset SPI bus before retry
+                    time.sleep(0.5)
+                    try:
+                        self.spi.deinit()
+                        time.sleep(0.1)
+                        import board
+                        self.spi = board.SPI()
+                        log.info("SPI bus reset for retry")
+                    except Exception as reset_err:
+                        log.warning(f"SPI reset failed: {reset_err}")
+                else:
+                    raise
 
     def raw_temp(self):
-        try:
-            with spi_lock():
-                return self.thermocouple.temperature_NIST
-        except RuntimeError as rte:
-            if rte.args and rte.args[0]:
-                raise Max31855_Error(rte.args[0])
-            raise Max31855_Error('unknown')
+        # Use a timeout to prevent infinite hangs on SPI reads
+        result = [None]
+        error = [None]
+
+        def read_temp_with_timeout():
+            try:
+                with spi_lock():
+                    result[0] = self.thermocouple.temperature_NIST
+            except RuntimeError as rte:
+                if rte.args and rte.args[0]:
+                    error[0] = Max31855_Error(rte.args[0])
+                else:
+                    error[0] = Max31855_Error('unknown')
+            except Exception as e:
+                error[0] = e
+
+        read_thread = threading.Thread(target=read_temp_with_timeout)
+        read_thread.daemon = True
+        read_thread.start()
+        read_thread.join(timeout=5.0)  # 5 second timeout
+
+        if read_thread.is_alive():
+            log.error("SPI read timeout - thermocouple read hung")
+            raise Max31855_Error("SPI timeout")
+
+        if error[0]:
+            raise error[0]
+
+        return result[0]
 
     def temperature(self):
         """SPI-locked temperature reading for external access"""
@@ -392,12 +436,35 @@ class Max31856(TempSensorReal):
         # dict named self.thermocouple.fault. Here we check that
         # dict for errors and raise an exception.
         # and raise Max31856_Error(message)
-        with spi_lock():
-            temp = self.thermocouple.temperature
-            for k,v in self.thermocouple.fault.items():
-                if v:
-                    raise Max31856_Error(k)
-            return temp
+
+        # Use a timeout to prevent infinite hangs on SPI reads
+        result = [None]
+        error = [None]
+
+        def read_temp_with_timeout():
+            try:
+                with spi_lock():
+                    temp = self.thermocouple.temperature
+                    for k,v in self.thermocouple.fault.items():
+                        if v:
+                            raise Max31856_Error(k)
+                    result[0] = temp
+            except Exception as e:
+                error[0] = e
+
+        read_thread = threading.Thread(target=read_temp_with_timeout)
+        read_thread.daemon = True
+        read_thread.start()
+        read_thread.join(timeout=5.0)  # 5 second timeout
+
+        if read_thread.is_alive():
+            log.error("SPI read timeout - thermocouple read hung")
+            raise Max31856_Error("SPI timeout")
+
+        if error[0]:
+            raise error[0]
+
+        return result[0]
 
     def temperature(self):
         """SPI-locked temperature reading for external access"""
