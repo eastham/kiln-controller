@@ -132,6 +132,7 @@ class ButtonManager(threading.Thread):
         # State management
         self.in_selection_mode = False  # True when in program selection mode
         self.last_selection_activity = 0  # Last time selection mode was used
+        self.is_default_program = False  # True if default program is loaded (never times out)
 
         # Profile management
         profiles_dir = getattr(config, 'kiln_profiles_directory', 'storage/profiles')
@@ -149,9 +150,10 @@ class ButtonManager(threading.Thread):
 
             profile = self.profile_manager.get_current_profile()
             if profile:
-                log.info(f"Setting default program: {profile['name']}")
+                log.info(f"Setting default program: {profile['name']} (persistent)")
                 # Enter selection mode so the start button works
                 self.in_selection_mode = True
+                self.is_default_program = True  # Mark as default - won't timeout
                 self.last_selection_activity = time.time()
 
                 if self.tft_display:
@@ -252,8 +254,9 @@ class ButtonManager(threading.Thread):
             log.info("Program button ignored - kiln not in IDLE state")
             return
 
-        # Enter or continue selection mode
+        # Enter or continue selection mode (manual selection, not default)
         self.in_selection_mode = True
+        self.is_default_program = False  # Manual selection will timeout
         self.last_selection_activity = time.time()
 
         # Cycle to next profile
@@ -291,8 +294,9 @@ class ButtonManager(threading.Thread):
 
         if success:
             log.info(f"Started kiln with profile: {profile['name']}")
-            # Exit selection mode
+            # Exit selection mode and clear default flag
             self.in_selection_mode = False
+            self.is_default_program = False
             if self.tft_display:
                 self.tft_display.exit_selection_mode()
         else:
@@ -320,16 +324,17 @@ class ButtonManager(threading.Thread):
                 self.tft_display.exit_selection_mode()
 
     def check_selection_timeout(self):
-        """Check if selection mode should timeout"""
+        """Check if selection mode should timeout on display only"""
         if not self.in_selection_mode:
             return
 
         current_time = time.time()
         if current_time - self.last_selection_activity > self.SELECTION_TIMEOUT:
-            log.info("Program selection timeout - returning to normal display")
-            self.in_selection_mode = False
+            log.info("Display timeout - returning to temp display (selection still active)")
+            # Keep selection active internally, just clear the display
             if self.tft_display:
                 self.tft_display.exit_selection_mode()
+            # Note: NOT clearing self.in_selection_mode - selection stays active for start button
 
     def run(self):
         """Main button monitoring loop"""
