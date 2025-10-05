@@ -306,6 +306,7 @@ try:
     import board
     gpio_program_button = board.D24    # Program cycle button (configurable)
     gpio_startstop_button = board.D23  # Start/stop button (configurable)
+    gpio_startstop_button2 = board.D20 # Additional start/stop button (GPIO20, Pin 38)
 except (NotImplementedError,AttributeError):
     print("GPIO button pins not configured - probably running in simulation mode")
 

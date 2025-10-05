@@ -175,12 +175,22 @@ class ButtonManager(threading.Thread):
             startstop_pin.pull = digitalio.Pull.UP
             self.startstop_button = Debouncer(startstop_pin)
 
-            log.info("GPIO buttons initialized successfully with debouncing")
+            # Configure second start/stop button (GPIO20)
+            if hasattr(config, 'gpio_startstop_button2'):
+                startstop_pin2 = digitalio.DigitalInOut(config.gpio_startstop_button2)
+                startstop_pin2.direction = digitalio.Direction.INPUT
+                startstop_pin2.pull = digitalio.Pull.UP
+                self.startstop_button2 = Debouncer(startstop_pin2)
+                log.info("GPIO buttons initialized (including second start/stop on GPIO20)")
+            else:
+                self.startstop_button2 = None
+                log.info("GPIO buttons initialized successfully with debouncing")
 
         except Exception as e:
             log.error(f"Failed to initialize GPIO buttons: {e}")
             self.program_button = None
             self.startstop_button = None
+            self.startstop_button2 = None
 
     def start_button_manager(self):
         """Start the button monitoring thread"""
@@ -204,6 +214,8 @@ class ButtonManager(threading.Thread):
             self.program_button.update()
         if self.startstop_button:
             self.startstop_button.update()
+        if self.startstop_button2:
+            self.startstop_button2.update()
 
     def send_api_command(self, command, **kwargs):
         """Send command to kiln controller API"""
@@ -339,6 +351,9 @@ class ButtonManager(threading.Thread):
                     self.handle_program_button()
 
                 if self.startstop_button and self.startstop_button.fell:
+                    self.handle_startstop_button()
+
+                if self.startstop_button2 and self.startstop_button2.fell:
                     self.handle_startstop_button()
 
                 # Check selection timeout
