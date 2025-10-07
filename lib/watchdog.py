@@ -32,7 +32,7 @@ class WatchdogMonitor(threading.Thread):
 
         # Watchdog configuration
         self.CHECK_INTERVAL = 1.0      # Check every second
-        self.THREAD_TIMEOUT = 20.0     # Threads must update within 20 seconds
+        self.THREAD_TIMEOUT = 25.0     # Threads must update within 20 seconds
 
         # Thread monitoring registry
         # Each thread registers itself and must update its timestamp regularly
