@@ -187,6 +187,7 @@ class TFTDisplay(threading.Thread):
     def _do_update(self):
         """Internal method that actually performs the display update"""
         try:
+            log.debug("TFT: _do_update starting")
             # Fast clear using pre-created black image
             self.image.paste(self.black_image)
 
@@ -204,9 +205,15 @@ class TFTDisplay(threading.Thread):
                     # Normal kiln status display
                     self.draw_normal_status()
 
-            # Update display
-            with spi_lock():
-                self.disp.image(self.image)
+            # Update display with timeout protection
+            log.debug("TFT: Acquiring SPI lock for display update")
+            try:
+                with spi_lock():
+                    log.debug("TFT: SPI lock acquired, writing to display")
+                    self.disp.image(self.image)
+                    log.debug("TFT: Display write complete")
+            except Exception as e:
+                log.error(f"SPI timeout or error updating display: {e}")
 
         except Exception as e:
             log.error(f"Error updating TFT display: {e}")
@@ -380,15 +387,24 @@ class TFTDisplay(threading.Thread):
         """Main display update loop"""
         log.info("TFT Display update loop started")
 
+        # Give the display time to fully initialize before watchdog monitoring
+        # This prevents false watchdog triggers during slow SPI initialization at boot
+        time.sleep(2)
+
         # Register with watchdog
         register_thread("TFTDisplay", "TFT display update thread")
 
         while self.running:
             try:
                 # Update watchdog timestamp
+                log.debug("TFT: Updating watchdog")
                 update_watchdog("TFTDisplay")
 
+                # Display update
+                log.debug("TFT: Starting display update")
                 self.update_display()
+                log.debug("TFT: Display update complete")
+
                 time.sleep(1)
             except Exception as e:
                 log.error(f"Error in TFT display loop: {e}")

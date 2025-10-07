@@ -58,10 +58,9 @@ try:
 except Exception as e:
     log.error(f"Failed to turn off heat at startup: {e}")
 
-# Initialize watchdog for safety monitoring
+# Initialize watchdog for safety monitoring (but don't start yet)
 watchdog = init_watchdog(oven)
-start_watchdog()
-log.info("Safety watchdog started - monitoring critical threads")
+log.info("Safety watchdog initialized - will start after all threads ready")
 
 # Initialize TFT display if enabled
 tft_display = create_tft_display(oven)
@@ -80,6 +79,10 @@ if button_manager:
     log.info("GPIO button manager enabled and started")
 else:
     button_manager = None
+
+# All critical threads started - now start watchdog monitoring
+start_watchdog()
+log.info("Safety watchdog started - monitoring critical threads")
 
 @app.route('/')
 def index():
