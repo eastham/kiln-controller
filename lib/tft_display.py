@@ -405,7 +405,7 @@ class TFTDisplay(threading.Thread):
                 self.update_display()
                 log.debug("TFT: Display update complete")
 
-                time.sleep(1)
+                time.sleep(3)
             except Exception as e:
                 log.error(f"Error in TFT display loop: {e}")
                 time.sleep(2)  # Wait longer on error
