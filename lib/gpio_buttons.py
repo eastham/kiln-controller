@@ -133,6 +133,7 @@ class ButtonManager(threading.Thread):
         self.in_selection_mode = False  # True when in program selection mode
         self.last_selection_activity = 0  # Last time selection mode was used
         self.is_default_program = False  # True if default program is loaded (never times out)
+        self.display_timed_out = False  # True if display already returned to normal
 
         # Profile management
         profiles_dir = getattr(config, 'kiln_profiles_directory', 'storage/profiles')
@@ -154,6 +155,7 @@ class ButtonManager(threading.Thread):
                 # Enter selection mode so the start button works
                 self.in_selection_mode = True
                 self.is_default_program = True  # Mark as default - won't timeout
+                self.display_timed_out = False  # Reset flag
                 self.last_selection_activity = time.time()
 
                 if self.tft_display:
@@ -267,6 +269,7 @@ class ButtonManager(threading.Thread):
         # Enter or continue selection mode (manual selection, not default)
         self.in_selection_mode = True
         self.is_default_program = False  # Manual selection will timeout
+        self.display_timed_out = False  # Reset display timeout flag
         self.last_selection_activity = time.time()
 
         # Cycle to next profile
@@ -338,9 +341,14 @@ class ButtonManager(threading.Thread):
         if not self.in_selection_mode:
             return
 
+        # If display already timed out, don't keep triggering it
+        if self.display_timed_out:
+            return
+
         current_time = time.time()
         if current_time - self.last_selection_activity > self.SELECTION_TIMEOUT:
             log.info("Display timeout - returning to temp display (selection still active)")
+            self.display_timed_out = True  # Mark as timed out to prevent repeated calls
             # Keep selection active internally, just clear the display
             if self.tft_display:
                 self.tft_display.exit_selection_mode()
