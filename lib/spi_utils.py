@@ -35,9 +35,9 @@ def spi_lock():
 
     log.debug("Acquiring SPI lock")
     with _spi_lock:
-        log.debug("SPI lock acquired")
+#        log.debug("SPI lock acquired")
         yield
-    log.debug("SPI lock released")
+#    log.debug("SPI lock released")
 
 def is_spi_lock_initialized():
     """Check if SPI lock has been initialized"""

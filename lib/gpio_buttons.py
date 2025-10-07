@@ -165,28 +165,32 @@ class ButtonManager(threading.Thread):
     def init_buttons(self):
         """Initialize GPIO buttons with debouncing"""
         try:
+            # Use 20ms debounce - balance between reliability and responsiveness
+            # Too high and quick presses get missed, too low and you get bouncing
+            debounce_interval = 0.020
+
             # Configure program cycle button
             program_pin = digitalio.DigitalInOut(config.gpio_program_button)
             program_pin.direction = digitalio.Direction.INPUT
             program_pin.pull = digitalio.Pull.UP
-            self.program_button = Debouncer(program_pin)
+            self.program_button = Debouncer(program_pin, interval=debounce_interval)
 
             # Configure start/stop button
             startstop_pin = digitalio.DigitalInOut(config.gpio_startstop_button)
             startstop_pin.direction = digitalio.Direction.INPUT
             startstop_pin.pull = digitalio.Pull.UP
-            self.startstop_button = Debouncer(startstop_pin)
+            self.startstop_button = Debouncer(startstop_pin, interval=debounce_interval)
 
             # Configure second start/stop button (GPIO20)
             if hasattr(config, 'gpio_startstop_button2'):
                 startstop_pin2 = digitalio.DigitalInOut(config.gpio_startstop_button2)
                 startstop_pin2.direction = digitalio.Direction.INPUT
                 startstop_pin2.pull = digitalio.Pull.UP
-                self.startstop_button2 = Debouncer(startstop_pin2)
-                log.info("GPIO buttons initialized (including second start/stop on GPIO20)")
+                self.startstop_button2 = Debouncer(startstop_pin2, interval=debounce_interval)
+                log.info(f"GPIO buttons initialized with {debounce_interval*1000:.0f}ms debounce (including second start/stop on GPIO20)")
             else:
                 self.startstop_button2 = None
-                log.info("GPIO buttons initialized successfully with debouncing")
+                log.info(f"GPIO buttons initialized with {debounce_interval*1000:.0f}ms debounce")
 
         except Exception as e:
             log.error(f"Failed to initialize GPIO buttons: {e}")
@@ -217,11 +221,17 @@ class ButtonManager(threading.Thread):
         if self.startstop_button:
             self.startstop_button.update()
         if self.startstop_button2:
+            old_value = self.startstop_button2.value if hasattr(self.startstop_button2, 'value') else None
             self.startstop_button2.update()
+            new_value = self.startstop_button2.value
+            # Log raw button state changes for debugging
+            if old_value != new_value:
+                log.debug(f"GPIO20 button state changed: {old_value} -> {new_value}")
 
     def send_api_command(self, command, **kwargs):
         """Send command to kiln controller API"""
         try:
+            log.debug(f"Sending API command '{command}' with args: {kwargs}")
             payload = {"cmd": command}
             payload.update(kwargs)
 
@@ -343,23 +353,37 @@ class ButtonManager(threading.Thread):
         # Register with watchdog
         register_thread("ButtonManager", "GPIO button monitoring thread")
 
+        loop_count = 0
         while self.running:
             try:
                 # Update watchdog timestamp
                 update_watchdog("ButtonManager")
+
+                # Log every 50 loops (5 seconds) to verify loop is running
+                loop_count += 1
+                if loop_count % 50 == 0:
+                    log.debug(f"Button manager loop alive (iteration {loop_count})")
 
                 # Update button debouncers
                 self.update_buttons()
 
                 # Check for button press events (fell = pressed with pull-up)
                 if self.program_button and self.program_button.fell:
+                    log.info("Program button pressed")
                     self.handle_program_button()
 
                 if self.startstop_button and self.startstop_button.fell:
+                    log.info("Start/Stop button (GPIO23) pressed")
                     self.handle_startstop_button()
 
-                if self.startstop_button2 and self.startstop_button2.fell:
-                    self.handle_startstop_button()
+                if self.startstop_button2:
+                    # Debug logging for GPIO20 button
+                    if self.startstop_button2.fell:
+                        log.info("Start/Stop button 2 (GPIO20) pressed - fell detected")
+                        self.handle_startstop_button()
+                    # Also log if rose (button released) to verify debouncer is working
+                    if self.startstop_button2.rose:
+                        log.debug("Start/Stop button 2 (GPIO20) released - rose detected")
 
                 # Check selection timeout
                 self.check_selection_timeout()
