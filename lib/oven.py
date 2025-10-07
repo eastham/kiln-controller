@@ -133,9 +133,10 @@ class TempSensorReal(TempSensor):
     def __init__(self):
         TempSensor.__init__(self)
         self.sleeptime = self.time_step / float(config.temperature_average_samples)
-        self.temptracker = TempTracker() 
+        self.temptracker = TempTracker()
         self.spi_setup()
         self.cs = digitalio.DigitalInOut(config.spi_cs)
+        self.cs.switch_to_output(value=True)  # CS pin must be output, idle high
 
     def spi_setup(self):
         if(hasattr(config,'spi_sclk') and
