@@ -139,7 +139,7 @@ class WatchdogMonitor(threading.Thread):
     def run(self):
         """Main watchdog monitoring loop"""
         log.info("Watchdog thread sleeping")
-        time.sleep(15)
+        time.sleep(45)
         log.info("Watchdog thread started")
         while self.running:
             try:
