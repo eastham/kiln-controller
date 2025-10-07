@@ -33,7 +33,7 @@ def spi_lock():
         yield
         return
 
-    log.debug("Acquiring SPI lock")
+#    log.debug("Acquiring SPI lock")
     with _spi_lock:
 #        log.debug("SPI lock acquired")
         yield
