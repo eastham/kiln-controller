@@ -50,6 +50,12 @@ class TFTDisplay(threading.Thread):
 
     def init_display(self):
         """Initialize the TFT display"""
+        # Check if display is disabled via config
+        if not getattr(config, 'enable_tft_display', True):
+            log.info("TFT display disabled via config - skipping hardware initialization")
+            self.disp = None
+            return
+
         try:
             # Configure display pins from config
             cs_pin = digitalio.DigitalInOut(config.tft_cs_pin)
