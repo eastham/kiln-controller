@@ -401,6 +401,15 @@ class Max31856(TempSensorReal):
         log.info("thermocouple MAX31856")
         import adafruit_max31856
 
+        # Manually toggle CS pin to reset the MAX31856 chip before initialization
+        # This ensures the chip starts in a clean state, preventing hung SPI reads
+        self.cs.value = True   # CS idle high
+        time.sleep(0.01)       # Brief delay
+        self.cs.value = False  # CS active (select chip)
+        time.sleep(0.01)       # Hold for 10ms
+        self.cs.value = True   # CS idle (deselect chip)
+        time.sleep(0.1)        # Wait for chip to stabilize
+
         # Initialize with retry to handle SPI bus hang at first boot
         max_retries = 3
         for attempt in range(max_retries):
