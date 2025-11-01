@@ -181,6 +181,11 @@ class TempSensorReal(TempSensor):
         return self.temptracker.get_avg_temp()
 
     def run(self):
+        # Delay startup to allow other SPI devices (TFT display) to initialize first
+        # This prevents race conditions during boot where multiple devices
+        # compete for SPI bus initialization
+        time.sleep(1.0)
+
         # Register with watchdog
         register_thread("TempSensor", "Temperature sensor reading thread")
 
