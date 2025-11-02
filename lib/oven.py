@@ -139,6 +139,8 @@ class TempSensorReal(TempSensor):
         self.cs.switch_to_output(value=True)  # CS pin must be output, idle high
 
     def spi_setup(self):
+        self.reset_tc()
+
         if(hasattr(config,'spi_sclk') and
            hasattr(config,'spi_mosi') and
            hasattr(config,'spi_miso')):
@@ -159,6 +161,24 @@ class TempSensorReal(TempSensor):
                 self.spi = board.SPI()
                 log.info("Hardware SPI selected for reading thermocouple")
 
+    def reset_tc(self):        
+        # set gpio_tc_enable high to enable thermocouple.
+        time.sleep(1)
+        try:
+            if hasattr(config, 'gpio_tc_enable'):
+                import digitalio
+                import board
+                tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
+                tc_enable.switch_to_output(value=False)
+                time.sleep(1)
+                tc_enable.value = True
+                
+                log.info("Thermocouple enabled on GPIO pin %s" % config.gpio_tc_enable)
+        except Exception as e:
+            log.error(f"Failed to enable thermocouple GPIO: {e}")
+        time.sleep(1)
+
+
     def get_temperature(self):
         '''read temp from tc and convert if needed'''
         try:
@@ -173,6 +193,7 @@ class TempSensorReal(TempSensor):
                 self.status.good()
             else:
                 log.error("Problem reading temp %s" % (tce.message))
+                self.reset_tc()
                 self.status.bad()
         return None
 

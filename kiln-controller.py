@@ -40,23 +40,6 @@ init_spi_lock()
 
 app = bottle.Bottle()
 
-
-# set gpio_tc_enable high to enable thermocouple.
-time.sleep(1)
-try:
-    if hasattr(config, 'gpio_tc_enable'):
-        import digitalio
-        import board
-        tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
-        tc_enable.switch_to_output(value=False)
-        time.sleep(1)
-        tc_enable.value = True
-        
-        log.info("Thermocouple enabled on GPIO pin %s" % config.gpio_tc_enable)
-except Exception as e:
-    log.error(f"Failed to enable thermocouple GPIO: {e}")
-time.sleep(1)
-
 if config.simulate == True:
     log.info("this is a simulation")
     oven = SimulatedOven()
