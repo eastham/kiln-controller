@@ -40,6 +40,16 @@ init_spi_lock()
 
 app = bottle.Bottle()
 
+# Initialize GPIO button manager if enabled
+button_manager = create_button_manager(oven, tft_display)
+if button_manager:
+    button_manager.start_button_manager()
+    log.info("GPIO button manager enabled and started")
+else:
+    button_manager = None
+
+time.sleep(1)
+
 if config.simulate == True:
     log.info("this is a simulation")
     oven = SimulatedOven()
@@ -72,13 +82,6 @@ if tft_display:
 else:
     tft_display = None
 
-# Initialize GPIO button manager if enabled
-button_manager = create_button_manager(oven, tft_display)
-if button_manager:
-    button_manager.start_button_manager()
-    log.info("GPIO button manager enabled and started")
-else:
-    button_manager = None
 
 # All critical threads started - now start watchdog monitoring
 start_watchdog()

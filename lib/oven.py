@@ -636,6 +636,10 @@ class Oven(threading.Thread):
             # this happens at start-up with a simulated oven
             temp = 0
             pass
+        except Exception as e:
+            log.error(f"Error getting temperature in get_state: {e}")
+            temp = 0
+            pass
 
         self.set_heat_rate(self.runtime,temp)
 
