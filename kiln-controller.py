@@ -50,6 +50,17 @@ else:
 
 time.sleep(1)
 
+# set gpio_tc_enable high to enable thermocouple.
+try:
+    if hasattr(config, 'gpio_tc_enable'):
+        import digitalio
+        import board
+        tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
+        tc_enable.switch_to_output(value=True)
+        log.info("Thermocouple enabled on GPIO pin %s" % config.gpio_tc_enable)
+except Exception as e:
+    log.error(f"Failed to enable thermocouple GPIO: {e}")
+
 if config.simulate == True:
     log.info("this is a simulation")
     oven = SimulatedOven()
