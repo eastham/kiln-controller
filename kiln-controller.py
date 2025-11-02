@@ -48,7 +48,10 @@ try:
         import digitalio
         import board
         tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
-        tc_enable.switch_to_output(value=True)
+        tc_enable.switch_to_output(value=False)
+        time.sleep(1)
+        tc_enable.value = True
+        
         log.info("Thermocouple enabled on GPIO pin %s" % config.gpio_tc_enable)
 except Exception as e:
     log.error(f"Failed to enable thermocouple GPIO: {e}")
