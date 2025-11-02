@@ -71,14 +71,6 @@ try:
 except Exception as e:
     log.error(f"Failed to turn off heat at startup: {e}")
 
-# Initialize GPIO button manager if enabled
-button_manager = create_button_manager(oven, tft_display)
-if button_manager:
-    button_manager.start_button_manager()
-    log.info("GPIO button manager enabled and started")
-else:
-    button_manager = None
-
 # Initialize watchdog for safety monitoring (but don't start yet)
 watchdog = init_watchdog(oven)
 log.info("Safety watchdog initialized - will start after all threads ready")
@@ -93,6 +85,13 @@ if tft_display:
 else:
     tft_display = None
 
+# Initialize GPIO button manager if enabled
+button_manager = create_button_manager(oven, tft_display)
+if button_manager:
+    button_manager.start_button_manager()
+    log.info("GPIO button manager enabled and started")
+else:
+    button_manager = None
 
 # All critical threads started - now start watchdog monitoring
 start_watchdog()
