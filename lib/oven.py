@@ -163,21 +163,19 @@ class TempSensorReal(TempSensor):
 
     def reset_tc(self):        
         # set gpio_tc_enable high to enable thermocouple.
-        time.sleep(1)
         try:
             if hasattr(config, 'gpio_tc_enable'):
                 import digitalio
                 import board
                 tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
                 tc_enable.switch_to_output(value=False)
-                time.sleep(1)
+                time.sleep(1.5)
                 tc_enable.value = True
                 
-                log.info("Thermocouple enabled on GPIO pin %s" % config.gpio_tc_enable)
+                log.info("Thermocouple reset on GPIO pin %s" % config.gpio_tc_enable)
         except Exception as e:
             log.error(f"Failed to enable thermocouple GPIO: {e}")
-        time.sleep(1)
-
+        time.sleep(.5)
 
     def get_temperature(self):
         '''read temp from tc and convert if needed'''
@@ -192,7 +190,7 @@ class TempSensorReal(TempSensor):
                 log.error("Problem reading temp (ignored) %s" % (tce.message))
                 self.status.good()
             else:
-                log.error("Problem reading temp %s" % (tce.message))
+                log.error("Problem reading temp %s, RESET" % (tce.message))
                 self.reset_tc()
                 self.status.bad()
         return None
@@ -328,7 +326,7 @@ class Max31855(TempSensorReal):
         read_thread = threading.Thread(target=read_temp_with_timeout)
         read_thread.daemon = True
         read_thread.start()
-        read_thread.join(timeout=5.0)  # 5 second timeout
+        read_thread.join(timeout=1.0)  # 5 second timeout
 
         if read_thread.is_alive():
             log.error("SPI read timeout - thermocouple read hung")
