@@ -52,6 +52,7 @@ try:
         log.info("Thermocouple enabled on GPIO pin %s" % config.gpio_tc_enable)
 except Exception as e:
     log.error(f"Failed to enable thermocouple GPIO: {e}")
+time.sleep(1)
 
 if config.simulate == True:
     log.info("this is a simulation")
