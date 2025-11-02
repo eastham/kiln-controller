@@ -83,7 +83,7 @@ class TFTDisplay(threading.Thread):
                     cs=cs_pin,
                     dc=dc_pin,
                     rst=reset_pin,
-                    baudrate=40000000
+                    baudrate=20000000
                 )
 
             # Add initialization delay and explicit reset

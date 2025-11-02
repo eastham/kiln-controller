@@ -8,7 +8,7 @@ import busio
 #   General options
 
 ### Logging
-log_level = logging.INFO
+log_level = logging.DEBUG
 log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
 
 ### Server
@@ -282,7 +282,7 @@ throttle_percent = 20
 # Enable support for Adafruit Mini PiTFT - 135x240 Color TFT display
 # This will show current temp, target temp, and time remaining
 # Set to True to enable, False to disable
-enable_tft_display = True
+enable_tft_display = False
 
 # TFT Display GPIO pins (only used if enable_tft_display = True)
 try:
