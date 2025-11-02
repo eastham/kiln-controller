@@ -40,17 +40,9 @@ init_spi_lock()
 
 app = bottle.Bottle()
 
-# Initialize GPIO button manager if enabled
-button_manager = create_button_manager(oven, tft_display)
-if button_manager:
-    button_manager.start_button_manager()
-    log.info("GPIO button manager enabled and started")
-else:
-    button_manager = None
-
-time.sleep(1)
 
 # set gpio_tc_enable high to enable thermocouple.
+time.sleep(1)
 try:
     if hasattr(config, 'gpio_tc_enable'):
         import digitalio
@@ -78,6 +70,14 @@ try:
     log.info("Startup safety check: heat turned off")
 except Exception as e:
     log.error(f"Failed to turn off heat at startup: {e}")
+
+# Initialize GPIO button manager if enabled
+button_manager = create_button_manager(oven, tft_display)
+if button_manager:
+    button_manager.start_button_manager()
+    log.info("GPIO button manager enabled and started")
+else:
+    button_manager = None
 
 # Initialize watchdog for safety monitoring (but don't start yet)
 watchdog = init_watchdog(oven)
