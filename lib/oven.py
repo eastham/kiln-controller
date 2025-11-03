@@ -139,7 +139,6 @@ class TempSensorReal(TempSensor):
         self.cs.switch_to_output(value=True)  # CS pin must be output, idle high
 
     def spi_setup(self):
-        self.reset_tc()
 
         if(hasattr(config,'spi_sclk') and
            hasattr(config,'spi_mosi') and
@@ -157,6 +156,8 @@ class TempSensorReal(TempSensor):
                 except Exception as e:
                     log.debug(f"SPI deinit failed (may not exist): {e}")
 
+                self.reset_tc()
+
                 # Reinitialize SPI bus with fresh state
                 self.spi = board.SPI()
                 log.info("Hardware SPI selected for reading thermocouple")
@@ -167,6 +168,11 @@ class TempSensorReal(TempSensor):
             if hasattr(config, 'gpio_tc_enable'):
                 import digitalio
                 import board
+                # enable cs pin before reset so it's valid during tc init
+                cs_pin = digitalio.DigitalInOut(config.spi_cs)
+                cs_pin.switch_to_output(value=True)
+                time.sleep(.1)
+
                 tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
                 tc_enable.switch_to_output(value=False)
                 time.sleep(2.0)
