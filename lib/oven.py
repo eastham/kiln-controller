@@ -169,7 +169,7 @@ class TempSensorReal(TempSensor):
                 import board
                 tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
                 tc_enable.switch_to_output(value=False)
-                time.sleep(1.5)
+                time.sleep(2.0)
                 tc_enable.value = True
                 
                 log.info("Thermocouple reset on GPIO pin %s" % config.gpio_tc_enable)
