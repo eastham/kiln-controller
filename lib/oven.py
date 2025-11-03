@@ -166,6 +166,7 @@ class TempSensorReal(TempSensor):
         # set gpio_tc_enable high to enable thermocouple.
         try:
             if hasattr(config, 'gpio_tc_enable'):
+                log.debug("Resetting thermocouple via GPIO pin %s" % config.gpio_tc_enable)
                 import digitalio
                 import board
                 # enable cs pin before reset so it's valid during tc init
