@@ -289,7 +289,6 @@ try:
     import board
     tft_cs_pin    = board.CE0    # TFT Chip Select (GPIO8/CE0)
     tft_dc_pin    = board.D25    # TFT Data/Command
-    tft_reset_pin = board.D26    # TFT Reset
 except (NotImplementedError,AttributeError):
     print("TFT display pins not configured - probably running in simulation mode")
 

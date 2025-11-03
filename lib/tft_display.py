@@ -60,17 +60,20 @@ class TFTDisplay(threading.Thread):
             # Configure display pins from config
             cs_pin = digitalio.DigitalInOut(config.tft_cs_pin)
             dc_pin = digitalio.DigitalInOut(config.tft_dc_pin)
-            reset_pin = digitalio.DigitalInOut(config.tft_reset_pin)
-
+            if hasattr(config, 'tft_reset_pin')
+                reset_pin = digitalio.DigitalInOut(config.tft_reset_pin)
+            else:
+                reset_pin = None
             # Manually toggle reset pin to ensure clean display state before init
             # This prevents hung display chips from blocking SPI initialization
             # Use SPI lock during reset to prevent conflicts with thermocouple
             with spi_lock():
-                reset_pin.switch_to_output()
-                reset_pin.value = False  # Assert reset (active low)
-                time.sleep(0.1)          # Hold reset for 100ms
-                reset_pin.value = True   # Release reset
-                time.sleep(0.1)          # Wait for display to come out of reset
+                if reset_pin:
+                    reset_pin.switch_to_output()
+                    reset_pin.value = False  # Assert reset (active low)
+                    time.sleep(0.1)          # Hold reset for 100ms
+                    reset_pin.value = True   # Release reset
+                    time.sleep(0.1)          # Wait for display to come out of reset
 
                 # Initialize display with offset parameters for proper alignment
                 self.disp = st7789.ST7789(
