@@ -282,7 +282,7 @@ throttle_percent = 20
 # Enable support for Adafruit Mini PiTFT - 135x240 Color TFT display
 # This will show current temp, target temp, and time remaining
 # Set to True to enable, False to disable
-enable_tft_display = False
+enable_tft_display = True
 
 # TFT Display GPIO pins (only used if enable_tft_display = True)
 try:

@@ -60,7 +60,7 @@ class TFTDisplay(threading.Thread):
             # Configure display pins from config
             cs_pin = digitalio.DigitalInOut(config.tft_cs_pin)
             dc_pin = digitalio.DigitalInOut(config.tft_dc_pin)
-            if hasattr(config, 'tft_reset_pin')
+            if hasattr(config, 'tft_reset_pin'):
                 reset_pin = digitalio.DigitalInOut(config.tft_reset_pin)
             else:
                 reset_pin = None
