@@ -162,27 +162,29 @@ class TempSensorReal(TempSensor):
                 self.spi = board.SPI()
                 log.info("Hardware SPI selected for reading thermocouple")
 
-    def reset_tc(self):        
+    def reset_tc(self):
         # set gpio_tc_enable high to enable thermocouple.
-        try:
-            if hasattr(config, 'gpio_tc_enable'):
-                log.debug("Resetting thermocouple via GPIO pin %s" % config.gpio_tc_enable)
-                import digitalio
-                import board
-                # enable cs pin before reset so it's valid during tc init
-                cs_pin = digitalio.DigitalInOut(config.spi_cs)
-                cs_pin.switch_to_output(value=True)
-                time.sleep(.1)
+        with spi_lock():
+            try:
+                if hasattr(config, 'gpio_tc_enable'):
+                    log.debug("Resetting thermocouple via GPIO pin %s" % config.gpio_tc_enable)
+                    import digitalio
+                    import board
+                    time.sleep(.1)
+                    # enable cs pin before reset so it's valid during tc init
+                    cs_pin = digitalio.DigitalInOut(config.spi_cs)
+                    cs_pin.switch_to_output(value=True)
+                    time.sleep(.1)
 
-                tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
-                tc_enable.switch_to_output(value=False)
-                time.sleep(3.0)
-                tc_enable.value = True
-                
-                log.info("Thermocouple reset on GPIO pin %s" % config.gpio_tc_enable)
-        except Exception as e:
-            log.error(f"Failed to enable thermocouple GPIO: {e}")
-        time.sleep(2)
+                    tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
+                    tc_enable.switch_to_output(value=False)
+                    time.sleep(3.0)
+                    tc_enable.value = True
+
+                    log.info("Thermocouple reset on GPIO pin %s" % config.gpio_tc_enable)
+            except Exception as e:
+                log.error(f"Failed to enable thermocouple GPIO: {e}")
+            time.sleep(2)
 
     def get_temperature(self):
         '''read temp from tc and convert if needed'''
