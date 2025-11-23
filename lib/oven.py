@@ -176,13 +176,13 @@ class TempSensorReal(TempSensor):
 
                 tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
                 tc_enable.switch_to_output(value=False)
-                time.sleep(2.0)
+                time.sleep(3.0)
                 tc_enable.value = True
                 
                 log.info("Thermocouple reset on GPIO pin %s" % config.gpio_tc_enable)
         except Exception as e:
             log.error(f"Failed to enable thermocouple GPIO: {e}")
-        time.sleep(.5)
+        time.sleep(2)
 
     def get_temperature(self):
         '''read temp from tc and convert if needed'''
