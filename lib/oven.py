@@ -164,27 +164,27 @@ class TempSensorReal(TempSensor):
 
     def reset_tc(self):
         # set gpio_tc_enable high to enable thermocouple.
-        with spi_lock():
-            try:
-                if hasattr(config, 'gpio_tc_enable'):
-                    log.debug("Resetting thermocouple via GPIO pin %s" % config.gpio_tc_enable)
-                    import digitalio
-                    import board
-                    time.sleep(.1)
-                    # enable cs pin before reset so it's valid during tc init
-                    cs_pin = digitalio.DigitalInOut(config.spi_cs)
-                    cs_pin.switch_to_output(value=True)
-                    time.sleep(.1)
+        # GPIO operations don't use SPI bus, so no lock needed
+        try:
+            if hasattr(config, 'gpio_tc_enable'):
+                log.debug("Resetting thermocouple via GPIO pin %s" % config.gpio_tc_enable)
+                import digitalio
+                import board
+                time.sleep(.1)
+                # enable cs pin before reset so it's valid during tc init
+                cs_pin = digitalio.DigitalInOut(config.spi_cs)
+                cs_pin.switch_to_output(value=True)
+                time.sleep(.1)
 
-                    tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
-                    tc_enable.switch_to_output(value=False)
-                    time.sleep(3.0)
-                    tc_enable.value = True
+                tc_enable = digitalio.DigitalInOut(config.gpio_tc_enable)
+                tc_enable.switch_to_output(value=False)
+                time.sleep(3.0)
+                tc_enable.value = True
 
-                    log.info("Thermocouple reset on GPIO pin %s" % config.gpio_tc_enable)
-            except Exception as e:
-                log.error(f"Failed to enable thermocouple GPIO: {e}")
-            time.sleep(2)
+                log.info("Thermocouple reset on GPIO pin %s" % config.gpio_tc_enable)
+        except Exception as e:
+            log.error(f"Failed to enable thermocouple GPIO: {e}")
+        time.sleep(2)
 
     def get_temperature(self):
         '''read temp from tc and convert if needed'''
@@ -317,13 +317,13 @@ class Max31855(TempSensorReal):
 
     def raw_temp(self):
         # Use a timeout to prevent infinite hangs on SPI reads
+        # Note: Lock must be acquired BEFORE spawning timeout thread to avoid deadlock
         result = [None]
         error = [None]
 
         def read_temp_with_timeout():
             try:
-                with spi_lock():
-                    result[0] = self.thermocouple.temperature_NIST
+                result[0] = self.thermocouple.temperature_NIST
             except RuntimeError as rte:
                 if rte.args and rte.args[0]:
                     error[0] = Max31855_Error(rte.args[0])
@@ -332,14 +332,15 @@ class Max31855(TempSensorReal):
             except Exception as e:
                 error[0] = e
 
-        read_thread = threading.Thread(target=read_temp_with_timeout)
-        read_thread.daemon = True
-        read_thread.start()
-        read_thread.join(timeout=1.0)  # 5 second timeout
+        with spi_lock():
+            read_thread = threading.Thread(target=read_temp_with_timeout)
+            read_thread.daemon = True
+            read_thread.start()
+            read_thread.join(timeout=1.0)  # 1 second timeout
 
-        if read_thread.is_alive():
-            log.error("SPI read timeout - thermocouple read hung")
-            raise Max31855_Error("SPI timeout")
+            if read_thread.is_alive():
+                log.error("SPI read timeout - thermocouple read hung")
+                raise Max31855_Error("SPI timeout")
 
         if error[0]:
             raise error[0]
@@ -481,28 +482,29 @@ class Max31856(TempSensorReal):
         # and raise Max31856_Error(message)
 
         # Use a timeout to prevent infinite hangs on SPI reads
+        # Note: Lock must be acquired BEFORE spawning timeout thread to avoid deadlock
         result = [None]
         error = [None]
 
         def read_temp_with_timeout():
             try:
-                with spi_lock():
-                    temp = self.thermocouple.temperature
-                    for k,v in self.thermocouple.fault.items():
-                        if v:
-                            raise Max31856_Error(k)
-                    result[0] = temp
+                temp = self.thermocouple.temperature
+                for k,v in self.thermocouple.fault.items():
+                    if v:
+                        raise Max31856_Error(k)
+                result[0] = temp
             except Exception as e:
                 error[0] = e
 
-        read_thread = threading.Thread(target=read_temp_with_timeout)
-        read_thread.daemon = True
-        read_thread.start()
-        read_thread.join(timeout=5.0)  # 5 second timeout
+        with spi_lock():
+            read_thread = threading.Thread(target=read_temp_with_timeout)
+            read_thread.daemon = True
+            read_thread.start()
+            read_thread.join(timeout=5.0)  # 5 second timeout
 
-        if read_thread.is_alive():
-            log.error("SPI read timeout - thermocouple read hung")
-            raise Max31856_Error("SPI timeout")
+            if read_thread.is_alive():
+                log.error("SPI read timeout - thermocouple read hung")
+                raise Max31856_Error("SPI timeout")
 
         if error[0]:
             raise error[0]

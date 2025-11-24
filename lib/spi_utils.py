@@ -16,7 +16,7 @@ _spi_lock = None
 def init_spi_lock():
     """Initialize the global SPI lock. Call this once from main application."""
     global _spi_lock
-    _spi_lock = threading.RLock()
+    _spi_lock = threading.Lock()
     log.info("SPI lock initialized")
 
 @contextmanager
