@@ -100,6 +100,12 @@ def handle_api():
             return json.dumps(oven.pid.pidstats)
 
 
+@app.get('/api/state')
+def handle_api_state():
+    log.info("/api/state command received")
+    return json.dumps(oven.get_state())
+
+
 @app.post('/api')
 def handle_api():
     log.info("/api is alive")
