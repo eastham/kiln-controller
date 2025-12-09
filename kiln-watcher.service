@@ -1,0 +1,26 @@
+[Unit]
+Description=Kiln Watcher - Continuous monitoring service for kiln controller
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/kiln-controller
+Environment="SLACK_HOOK_URL=YOUR_SLACK_WEBHOOK_URL_HERE"
+ExecStart=/usr/bin/python3 /home/pi/kiln-controller/watcher.py --slack-hook=${SLACK_HOOK_URL}
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kiln-watcher
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
