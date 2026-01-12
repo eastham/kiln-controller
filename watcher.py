@@ -178,10 +178,11 @@ class Watcher(object):
 
         elif old_state == KilnState.IDLE and new_state == KilnState.RUNNING:
             # Normal: kiln started a run
-            self.send_notification(
-                f"Kiln started running\n"
-                f"Current: {temp:.1f}°, Target: {target:.1f}°"
-            )
+            #self.send_notification(
+            #    f"Kiln started running\n"
+            #    f"Current: {temp:.1f}°, Target: {target:.1f}°"
+            #)
+            pass
 
         elif old_state == KilnState.RUNNING and new_state == KilnState.IDLE:
             # Run completed successfully
@@ -252,7 +253,7 @@ class Watcher(object):
             else:
                 # Check if we've been stuck for more than 60 seconds
                 stuck_duration = current_time - self.stuck_temp_start
-                if stuck_duration >= 60 and not self.stuck_temp_alert_sent:
+                if stuck_duration >= 180 and not self.stuck_temp_alert_sent:
                     self.send_notification(
                         f"Temperature stuck at error value!\n"
                         f"Current: {temp:.1f}°\n"
